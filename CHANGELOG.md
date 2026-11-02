@@ -1,8 +1,26 @@
-# Changelog — Trigglow Desktop (Windows, Linux)
+# Changelog — Trigglow Studio (Windows, Linux)
 
-All notable changes to the Trigglow Desktop application for Windows will be documented in this file.
+All notable changes to the Trigglow Studio desktop app are documented in this file.
 
 ## [Unreleased]
+
+## [0.10.0] - 2026-11-02
+
+### Changed
+- Clips keep the resolution OBS records at (1440p, 4K…) instead of always shrinking to 1080p, and the frame rate is kept. You can still pick 1080p or 720p in the Clips card if uploads are slow.
+- Choose whether new clips go up private, unlisted or public, and set the title with {game} and {date}: by default it is the category you were streaming and the date.
+- The chat message TrigglowBot posts for a Stream Deck clip can be switched off or rewritten ({link} is the clip link). Private clips posted to chat go up as unlisted, so the link works.
+- Games with NVIDIA Highlights (Fortnite and others): when the game saves a kill or a win, the app saves your Replay Buffer right then, with your camera and overlays. On by default while you are live; you can turn it off or pick the folder in the Clips card.
+- Clips that already play in every browser and fit your plan go up exactly as OBS saved them, with no re-encoding on your PC. When a clip does need it, the app uses your graphics card (NVIDIA, AMD or Intel) instead of the processor, so the game and OBS keep their CPU.
+- New look to match the web: warm dark colours, rounded cards and buttons, and violet only on the main action, on the sign-in, setup, settings and title bar screens.
+- The whole app is now translated into all 16 languages: setup, settings, clips, shortcuts, text sources and updates no longer show in English when you use another language.
+- The app is now called Trigglow Studio: the new name is on the window, the title bar, the tray and the sign-in screen. Your account, settings and clips stay as they were.
+- Connecting Twitch, Kick, YouTube, Discord or Spotify now opens in your usual browser instead of inside the app. Confirm the Trigglow account there, sign in to the platform and come back: the app shows the result as soon as you return.
+- The floating chat window and the Live chat page are gone: chat lives in the OBS chat dock and in Trigglow Studio's chat dock.
+
+### Fixed
+- A link to Trigglow's home page in your language (for example /es) shows the app's sign-in screen, like the English one, instead of opening your browser.
+- The alerts source the app adds to OBS is created centred on the canvas, not low and to the right. Sources you already placed stay where they are.
 
 ## [0.9.0] - 2026-11-01
 

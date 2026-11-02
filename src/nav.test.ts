@@ -9,6 +9,13 @@ test('navigation policy keeps the app on /app', () => {
   assert.equal(classifyNav('https://trigglow.com/app'), 'allow');
   assert.equal(classifyNav('https://trigglow.com/login'), 'signin');
   assert.equal(classifyNav('https://trigglow.com/'), 'signin');
+  // The home page in another language is the same page; other public pages in any language go to the browser.
+  assert.equal(classifyNav('https://trigglow.com/es'), 'signin');
+  assert.equal(classifyNav('https://trigglow.com/pt-br/'), 'signin');
+  assert.equal(classifyNav('https://trigglow.com/ca-valencia'), 'signin');
+  assert.equal(classifyNav('https://trigglow.com/es/precios'), 'external');
+  assert.equal(classifyNav('https://trigglow.com/esports'), 'external');
+  assert.equal(classifyNav('https://trigglow.com/es/app'), 'external');
   assert.equal(classifyNav('https://trigglow.com/docs'), 'external');
   assert.equal(classifyNav('https://trigglow.com/admin'), 'external');
   assert.equal(classifyNav('https://trigglow.com/application'), 'external');
