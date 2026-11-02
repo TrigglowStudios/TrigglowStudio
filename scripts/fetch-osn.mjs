@@ -61,13 +61,17 @@ if (have(stamp, VERSION)) {
   console.log(`studio:fetch: obs-studio-node ${VERSION} already in vendor/.`);
 } else {
   const [tmp, archive] = await download(URL_BASE + `osn-${VERSION}-release-win64.tar.gz`, SHA256);
-  // Unpack next to the target, then swap, so a failed run never leaves half an engine behind.
-  const staging = path.join(tmp, 'x');
-  fs.mkdirSync(staging);
-  execFileSync(TAR, ['-xzf', archive, '-C', staging], { stdio: 'inherit' });
+  // Unpack next to the target, then swap, so a failed run never leaves half an engine behind. Inside vendor/ (same
+  // drive as the target: a rename can't cross drives, and CI's temp folder is on C: while the repo is on D:).
   fs.mkdirSync(vendor, { recursive: true });
-  fs.rmSync(target, { recursive: true, force: true });
-  fs.renameSync(path.join(staging, 'obs-studio-node'), target);
+  const staging = fs.mkdtempSync(path.join(vendor, '.staging-'));
+  try {
+    execFileSync(TAR, ['-xzf', archive, '-C', staging], { stdio: 'inherit' });
+    fs.rmSync(target, { recursive: true, force: true });
+    fs.renameSync(path.join(staging, 'obs-studio-node'), target);
+  } finally {
+    fs.rmSync(staging, { recursive: true, force: true });
+  }
   fs.writeFileSync(stamp, VERSION + '\n');
   fs.rmSync(tmp, { recursive: true, force: true });
   console.log(`studio:fetch: obs-studio-node ${VERSION} ready in vendor/obs-studio-node.`);
