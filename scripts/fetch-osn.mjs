@@ -15,9 +15,12 @@ const SHA256 = 'dca9725fc42a00542117bced31a94707c35ebc7fa6651ca52a396f24736adc79
 const URL_BASE = 'https://s3-us-west-2.amazonaws.com/obsstudionodes3.streamlabs.com/';
 
 /** The Dynamic Delay core: the `-windows-x64-studio-core.zip` asset of a plugin release (its CI builds it). */
-const DELAY_VERSION = '';
-const DELAY_SHA256 = '';
-const DELAY_URL = (v) => `https://github.com/VirosMs/obs-trigglow-dynamic-delay/releases/download/${v}/obs-trigglow-dynamic-delay-${v}-windows-x64-studio-core.zip`;
+const DELAY_VERSION = '0.7.2';
+const DELAY_SHA256 = '584429bd77f8e2d16220c9bc4abe93cf424a05fec0f8f75f25ad4c3d016c08a0';
+const DELAY_URL = (v) => `https://github.com/TrigglowStudios/trigglow-dynamic-delay/releases/download/${v}/obs-trigglow-dynamic-delay-${v}-windows-x64-studio-core.zip`;
+
+// Windows' own bsdtar (it unpacks .zip too): from Git Bash, `tar` is GNU tar, which reads `C:` as a remote host.
+const TAR = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const vendor = path.join(root, 'vendor');
@@ -61,7 +64,7 @@ if (have(stamp, VERSION)) {
   // Unpack next to the target, then swap, so a failed run never leaves half an engine behind.
   const staging = path.join(tmp, 'x');
   fs.mkdirSync(staging);
-  execFileSync('tar', ['-xzf', archive, '-C', staging], { stdio: 'inherit' });
+  execFileSync(TAR, ['-xzf', archive, '-C', staging], { stdio: 'inherit' });
   fs.mkdirSync(vendor, { recursive: true });
   fs.rmSync(target, { recursive: true, force: true });
   fs.renameSync(path.join(staging, 'obs-studio-node'), target);
@@ -78,7 +81,7 @@ if (!DELAY_VERSION) {
 } else {
   const [tmp, archive] = await download(DELAY_URL(DELAY_VERSION), DELAY_SHA256);
   // The zip mirrors the engine's layout (obs-plugins/64bit, data/obs-plugins/<name>): unpacked straight into it.
-  execFileSync('tar', ['-xf', archive, '-C', target], { stdio: 'inherit' });
+  execFileSync(TAR, ['-xf', archive, '-C', target], { stdio: 'inherit' });
   fs.writeFileSync(delayStamp, DELAY_VERSION + '\n');
   fs.rmSync(tmp, { recursive: true, force: true });
   console.log(`studio:fetch: Dynamic Delay core ${DELAY_VERSION} ready in the engine.`);

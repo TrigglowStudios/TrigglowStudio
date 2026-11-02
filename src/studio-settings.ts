@@ -104,6 +104,8 @@ export interface StudioSettings {
   lowLatency: boolean;
   networkOptimizations: boolean;
   processPriority: (typeof PROCESS_PRIORITIES)[number];
+  /** The engine runs as `obs64.exe`, so Discord sees streaming software and its automatic streamer mode turns on. */
+  discordStreamerMode: boolean;
   /** A libobs encoder id, or 'auto' (hardware first: NVENC, AMF, Quick Sync, then x264). */
   encoder: string;
   /** Video bitrate in kbps. */
@@ -210,6 +212,7 @@ export function defaultStudioSettings(recordFolder: string): StudioSettings {
     lowLatency: false,
     networkOptimizations: false,
     processPriority: 'Normal',
+    discordStreamerMode: true,
     encoder: 'auto',
     bitrate: 6000,
     recordFolder,
@@ -306,6 +309,7 @@ export function normalizeStudioSettings(raw: unknown, base: StudioSettings): Stu
     lowLatency: bool(r.lowLatency, base.lowLatency),
     networkOptimizations: bool(r.networkOptimizations, base.networkOptimizations),
     processPriority: pick(PROCESS_PRIORITIES, r.processPriority, base.processPriority),
+    discordStreamerMode: bool(r.discordStreamerMode, base.discordStreamerMode),
     encoder: typeof r.encoder === 'string' && /^[a-z0-9_]{1,64}$/.test(r.encoder) ? r.encoder : base.encoder,
     bitrate: clamp(r.bitrate, BITRATE, base.bitrate),
     recordFolder: typeof r.recordFolder === 'string' && r.recordFolder.trim() && r.recordFolder.length <= 1000 ? r.recordFolder.trim() : base.recordFolder,

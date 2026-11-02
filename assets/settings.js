@@ -357,6 +357,7 @@ function renderStudio(d) {
   $('stDynBitrate').checked = s.dynamicBitrate;
   $('stLowLatency').checked = s.lowLatency;
   $('stNetOpt').checked = s.networkOptimizations;
+  $('stDiscord').checked = s.discordStreamerMode;
   fill('stPriority', ['High', 'AboveNormal', 'Normal', 'BelowNormal', 'Idle'].map((p) => [p, tr(`studio.priority.${p}`)]), s.processPriority);
   fill('stEncoder', [['auto', tr('studio.encoder.auto')], ...d.encoders.map((id) => [id, ENCODER_NAMES[id] || id])], s.encoder);
   lastEncoders = d.encoders;
@@ -640,6 +641,7 @@ if (shell) {
   $('stDynBitrate').onchange = () => saveStudio({ dynamicBitrate: $('stDynBitrate').checked });
   $('stLowLatency').onchange = () => saveStudio({ lowLatency: $('stLowLatency').checked });
   $('stNetOpt').onchange = () => saveStudio({ networkOptimizations: $('stNetOpt').checked });
+  $('stDiscord').onchange = () => saveStudio({ discordStreamerMode: $('stDiscord').checked });
   $('stPriority').onchange = () => saveStudio({ processPriority: $('stPriority').value });
   // The encoder's own window (preset, profile, rate control, keyframes…), for the encoder in use.
   $('stEncoderProps').onclick = () => shell.studioPopup({ kind: 'encoder', source: $('stEncoder').value === 'auto' ? (lastEncoders[0] || '') : $('stEncoder').value });

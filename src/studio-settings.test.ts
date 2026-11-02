@@ -10,6 +10,12 @@ test('junk settings fall back field by field', () => {
   assert.deepEqual(normalizeStudioSettings(null, base), base);
 });
 
+test('Discord streamer mode: on by default, a boolean only', () => {
+  assert.equal(base.discordStreamerMode, true);
+  assert.equal(normalizeStudioSettings({ discordStreamerMode: false }, base).discordStreamerMode, false);
+  assert.equal(normalizeStudioSettings({ discordStreamerMode: 'no' }, base).discordStreamerMode, true);
+});
+
 test('valid settings are kept; the target is Multistream or a channel id', () => {
   const id = '3f2b8c1e-9d4a-4c7e-8b1f-0a2d3e4f5a6b';
   const s = normalizeStudioSettings({ target: id, output: '1280x720', fps: 30, encoder: 'obs_x264', bitrate: 4500, recordFormat: 'mp4', transition: 'cut', transitionMs: 800 }, base);

@@ -25,6 +25,8 @@ test("only our own engine copy counts as a leftover, never the streamer's OBS", 
   // An engine whose app (parent) still runs belongs to another instance or a test: left alone.
   const withParents = [`12|${path.join(dir, 'obs64.exe')}|500`, `78|${path.join(dir, 'obs64.exe')}|600`].join(String.fromCharCode(10));
   assert.deepEqual(strayEnginePids(withParents, dir, (pid) => pid === 500), [78]);
+  // The engine under its own name (Discord streamer mode off) counts too.
+  assert.deepEqual(strayEnginePids(`90|${path.join(dir, 'trigglow-engine.exe')}`, dir), [90]);
 });
 
 test('transitions map to libobs; a stinger without a file is a fade', () => {

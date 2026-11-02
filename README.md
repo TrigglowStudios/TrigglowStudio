@@ -3,7 +3,7 @@
 The Trigglow desktop app for Windows and Linux. It works two ways:
 
 - **Next to OBS:** it connects to OBS by itself, adds the Trigglow overlays, saves instant clips and runs automations.
-- **Trigglow Studio:** its own broadcasting editor (scenes, sources, mixer, streaming and recording), built on the OBS Studio engine (libobs) through [obs-studio-node](https://github.com/streamlabs/obs-studio-node). It imports OBS and Streamlabs Desktop scene collections, and it can run [Trigglow Dynamic Delay](https://github.com/VirosMs/obs-trigglow-dynamic-delay).
+- **Trigglow Studio:** its own broadcasting editor (scenes, sources, mixer, streaming and recording), built on the OBS Studio engine (libobs) through [obs-studio-node](https://github.com/streamlabs/obs-studio-node). It imports OBS and Streamlabs Desktop scene collections, and it can run [Trigglow Dynamic Delay](https://github.com/TrigglowStudios/trigglow-dynamic-delay).
 
 Licensed under the [GNU General Public License v3.0 or later](LICENSE). Trigglow Studio is based on the OBS Studio engine; OBS Studio and obs-studio-node are © their contributors and licensed under the GPL (their licences and source links are in [licenses/](licenses/NOTICE.md), which the installer includes). Trigglow Studio is not affiliated with or endorsed by the OBS Project.
 

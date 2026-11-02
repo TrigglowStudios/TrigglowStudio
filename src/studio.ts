@@ -100,15 +100,21 @@ const OBS_LOCALES: Record<string, string> = {
 export const obsLocale = (appLocale: string) => OBS_LOCALES[appLocale] ?? 'en-US';
 
 /**
- * PIDs of `obs64.exe` processes running from `dir` whose app is gone, from `Win32_Process` rows of
+ * The engine's executable names in vendor/: OSN's own `obs64.exe`, which Discord takes for OBS (its automatic streamer
+ * mode turns on), and a hard link under our own name for streamers who don't want that (settings.discordStreamerMode).
+ */
+const ENGINE_EXES = ['obs64.exe', 'trigglow-engine.exe'] as const;
+
+/**
+ * PIDs of engine processes (ENGINE_EXES) running from `dir` whose app is gone, from `Win32_Process` rows of
  * "<pid>|<path>|<parent pid>". One whose parent still runs (another app or test using its own engine) stays.
  */
 export function strayEnginePids(rows: string, dir: string, parentAlive: (pid: number) => boolean = () => false): number[] {
-  const exe = path.join(dir, 'obs64.exe').toLowerCase();
+  const exes = ENGINE_EXES.map((e) => path.join(dir, e).toLowerCase());
   return rows
     .split(/\r?\n/)
     .map((line) => line.split('|'))
-    .filter(([pid, p, parent]) => /^\d+$/.test(pid ?? '') && (p ?? '').trim().toLowerCase() === exe && !(/^\d+$/.test((parent ?? '').trim()) && parentAlive(Number(parent))))
+    .filter(([pid, p, parent]) => /^\d+$/.test(pid ?? '') && exes.includes((p ?? '').trim().toLowerCase()) && !(/^\d+$/.test((parent ?? '').trim()) && parentAlive(Number(parent))))
     .map(([pid]) => Number(pid));
 }
 
@@ -129,7 +135,7 @@ function enginePids(): number[] {
   try {
     const rows = execFileSync(
       'powershell.exe',
-      ['-NoProfile', '-NonInteractive', '-Command', "Get-CimInstance Win32_Process -Filter \"Name='obs64.exe'\" | ForEach-Object { \"$($_.ProcessId)|$($_.ExecutablePath)|$($_.ParentProcessId)\" }"],
+      ['-NoProfile', '-NonInteractive', '-Command', "Get-CimInstance Win32_Process -Filter \"Name='obs64.exe' OR Name='trigglow-engine.exe'\" | ForEach-Object { \"$($_.ProcessId)|$($_.ExecutablePath)|$($_.ParentProcessId)\" }"],
       { encoding: 'utf8', timeout: 8000, windowsHide: true },
     );
     return strayEnginePids(rows, OSN_DIR, processAlive);
@@ -325,7 +331,7 @@ interface Transition {
   release(): void;
 }
 interface Osn {
-  IPC: { host(uri: string): number; disconnect(): void };
+  IPC: { host(uri: string): number; disconnect(): void; setServerPath(exe: string, workingDirectory: string): void };
   NodeObs: Record<string, (...args: unknown[]) => unknown>;
   Global: {
     setOutputSource(channel: number, source: unknown): void;
@@ -590,6 +596,22 @@ export class StudioEngine {
     killStrayEngine();
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const osn = require(OSN_DIR) as Osn;
+    if (!settings.discordStreamerMode) {
+      // Same binary under our own name: Discord no longer sees OBS. A hard link costs no space (a copy if links fail),
+      // made afresh on every start so an update's new obs64.exe is the one that runs.
+      const own = path.join(OSN_DIR, ENGINE_EXES[1]);
+      try {
+        fs.rmSync(own, { force: true });
+        try {
+          fs.linkSync(path.join(OSN_DIR, ENGINE_EXES[0]), own);
+        } catch {
+          fs.copyFileSync(path.join(OSN_DIR, ENGINE_EXES[0]), own);
+        }
+        osn.IPC.setServerPath(own, OSN_DIR);
+      } catch (err) {
+        console.warn('[studio] engine under its own name failed, running as obs64.exe', err);
+      }
+    }
     const ipc = osn.IPC.host(`trigglow-studio-${process.pid}`);
     if (ipc !== 0) throw new Error(`studio: engine process failed to start (${ipc})`);
     osn.NodeObs.SetWorkingDirectory(OSN_DIR);
