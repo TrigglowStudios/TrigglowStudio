@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; script-src 'self'">
+  <title>Trigglow setup</title>
+  <link rel="stylesheet" href="shell.css">
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+  <main class="onb">
+    <ol class="steps" id="steps" aria-label="Setup progress"></ol>
+
+    <section class="card step" id="s-welcome">
+      <img class="logo" src="icon.png" alt="">
+      <h1 data-i18n="onb.welcome.title"></h1>
+      <p class="lead" data-i18n="onb.welcome.body"></p>
+      <ul class="bullets">
+        <li data-i18n="onb.welcome.b1"></li>
+        <li data-i18n="onb.welcome.b2"></li>
+        <li data-i18n="onb.welcome.b3"></li>
+      </ul>
+    </section>
+
+    <section class="card step" id="s-account">
+      <h1 data-i18n="onb.account.title"></h1>
+      <p class="lead" data-i18n="onb.account.body"></p>
+      <p id="account-done" class="result ok hidden"></p>
+      <p id="account-error" class="banner hidden" role="alert"></p>
+      <p id="account-waiting" class="hint hidden" data-i18n="signin.waiting"></p>
+      <div class="actions left">
+        <button id="account-start" class="primary" data-i18n="signin.cta"></button>
+        <button id="account-again" class="hidden" data-i18n="signin.again"></button>
+        <button id="account-cancel" class="hidden" data-i18n="signin.cancel"></button>
+      </div>
+    </section>
+
+    <section class="card step" id="s-engine">
+      <h1 data-i18n="onb.engine.title"></h1>
+      <p class="lead" data-i18n="onb.engine.body"></p>
+      <div class="engines" role="radiogroup" data-i18n-aria="onb.engine.title">
+        <label class="engine"><input type="radio" name="engine" value="studio"><span><strong data-i18n="onb.engine.studio"></strong><small data-i18n="onb.engine.studioDesc"></small></span></label>
+        <label class="engine"><input type="radio" name="engine" value="obs"><span><strong data-i18n="onb.engine.obs"></strong><small data-i18n="onb.engine.obsDesc"></small></span></label>
+      </div>
+    </section>
+
+    <!-- Only with Trigglow Studio picked and OBS / Streamlabs collections on this PC (docs/design/trigglow-studio.md §5.1). -->
+    <section class="card step" id="s-import">
+      <h1 data-i18n="onb.import.title"></h1>
+      <p class="lead" data-i18n="onb.import.body"></p>
+      <label class="field"><span data-i18n="studio.imp.collection"></span><select id="imp-pick"></select></label>
+      <label class="check" id="imp-profile-row"><input id="imp-profile" type="checkbox" checked><span data-i18n="studio.imp.profile"></span></label>
+      <div class="actions left"><button id="imp-go" type="button" class="primary" data-i18n="studio.imp.go"></button></div>
+      <p id="imp-msg" class="status hidden" role="status"></p>
+      <div id="imp-report" class="imp-report hidden"></div>
+      <p class="hint" data-i18n="onb.import.later"></p>
+    </section>
+
+    <section class="card step" id="s-obs">
+      <h1 data-i18n="onb.obs.title"></h1>
+      <p class="lead" data-i18n="onb.obs.body"></p>
+      <ul class="checks" id="obs-checks">
+        <li data-k="installed"><span class="mark"></span><span data-i18n="onb.obs.check.installed"></span></li>
+        <li data-k="running"><span class="mark"></span><span data-i18n="onb.obs.check.running"></span></li>
+        <li data-k="server"><span class="mark"></span><span data-i18n="onb.obs.check.server"></span></li>
+        <li data-k="connected"><span class="mark"></span><span data-i18n="onb.obs.check.connected"></span></li>
+      </ul>
+      <div id="obs-hint" class="callout" role="status"></div>
+      <div id="fix" class="fix hidden">
+        <button id="fix-btn" class="primary"></button>
+        <div id="fix-confirm" class="callout warn hidden">
+          <span data-i18n="fix.confirm"></span>
+          <div class="actions left">
+            <button id="fix-yes" class="primary" data-i18n="fix.yes"></button>
+            <button id="fix-no" data-i18n="fix.no"></button>
+          </div>
+        </div>
+      </div>
+      <p id="fix-msg" class="status" role="status"></p>
+      <details id="obs-steps" class="hidden">
+        <summary data-i18n="onb.obs.orManual"></summary>
+        <ol class="howto">
+          <li data-i18n="onb.obs.how1"></li>
+          <li data-i18n="onb.obs.how2"></li>
+          <li data-i18n="onb.obs.how3"></li>
+        </ol>
+      </details>
+      <div class="actions left">
+        <button id="obs-retry" data-i18n="onb.obs.retry"></button>
+        <button id="obs-toggle-manual" class="link" data-i18n="onb.obs.manual"></button>
+      </div>
+      <div id="obs-manual" class="manual hidden">
+        <div class="row">
+          <label><span data-i18n="settings.host"></span><input id="m-host" type="text" maxlength="255"></label>
+          <label><span data-i18n="settings.port"></span><input id="m-port" type="number" min="1" max="65535"></label>
+        </div>
+        <label><span data-i18n="settings.password"></span><input id="m-password" type="password" autocomplete="off"></label>
+        <div class="actions left">
+          <button id="m-save" class="primary" data-i18n="settings.save"></button>
+          <button id="m-auto" class="link" data-i18n="onb.obs.useAuto"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card step" id="s-overlays">
+      <h1 data-i18n="onb.overlays.title"></h1>
+      <p class="lead" data-i18n="onb.overlays.body"></p>
+      <p id="ov-need" class="callout hidden" data-i18n="onb.overlays.needObs"></p>
+      <ul class="ovlist" id="ov-list"></ul>
+      <label class="scene"><span data-i18n="install.scene"></span><select id="ov-scene"></select></label>
+      <div class="actions left">
+        <button id="ov-install" class="primary" data-i18n="onb.overlays.install"></button>
+      </div>
+      <p id="ov-msg" class="status" role="status"></p>
+    </section>
+
+    <section class="card step" id="s-done">
+      <img class="logo" src="icon.png" alt="">
+      <h1 data-i18n="onb.done.title"></h1>
+      <p class="lead" data-i18n="onb.done.body"></p>
+      <ul class="checks" id="done-list"></ul>
+    </section>
+
+    <footer class="onb-nav">
+      <button id="back" data-i18n="onb.back"></button>
+      <span class="grow"></span>
+      <button id="skip" class="link" data-i18n="onb.skip"></button>
+      <button id="next" class="primary" data-i18n="onb.next"></button>
+    </footer>
+  </main>
+  <script src="i18n.js"></script>
+  <script src="obsfix.js"></script>
+  <script src="onboarding.js"></script>
+</body>
+</html>

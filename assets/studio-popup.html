@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; font-src 'self'; script-src 'self'">
+  <title>Trigglow Studio</title>
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body class="popup">
+  <header class="popup-head"><h1 id="title"></h1></header>
+
+  <!-- picker: Add source, like Streamlabs' window: grouped tiles + search on the left, what it does on the right -->
+  <main id="picker" class="popup-body picker-split" hidden>
+    <section class="pick-list">
+      <label class="pick-search"><span id="pickSearchIcon" aria-hidden="true"></span><input id="pickSearch" type="search" spellcheck="false" data-i18n-aria="studio.pick.search"></label>
+      <div id="pickGroups" class="pick-groups"></div>
+      <p id="pickNone" class="empty" data-i18n="studio.pick.none" hidden></p>
+    </section>
+    <aside class="pick-detail" aria-live="polite">
+      <div id="pickIcon" class="pick-icon" aria-hidden="true"></div>
+      <h2 id="pickName"></h2>
+      <p id="pickDesc" class="pick-desc" data-i18n="studio.pick.empty"></p>
+      <div id="pickMode" class="seg" role="radiogroup" hidden>
+        <label><input type="radio" name="pickMode" value="new" checked><span data-i18n="studio.pick.new"></span></label>
+        <label><input type="radio" name="pickMode" value="existing"><span data-i18n="studio.pick.existing"></span></label>
+      </div>
+      <label class="field pick-name" id="pickNameRow" hidden><span data-i18n="studio.sourceName"></span><input id="pickNameInput" type="text" maxlength="80" spellcheck="false"></label>
+      <label class="field pick-name" id="pickExistingRow" hidden><span id="pickExistingLabel" data-i18n="studio.audio.name"></span><select id="pickExisting"></select></label>
+    </aside>
+  </main>
+
+  <!-- transform: OBS's Edit transform window for one item -->
+  <main id="transform" class="popup-body" hidden>
+    <p id="tfAlerts" class="empty" data-i18n="studio.tf.alertsNote" hidden></p>
+    <div class="tf-grid">
+      <span class="tf-label" data-i18n="studio.tf.position"></span><div class="tf-pair"><input id="tfX" type="number" step="1" aria-label="X"><input id="tfY" type="number" step="1" aria-label="Y"></div>
+      <span class="tf-label" data-i18n="studio.tf.rotation"></span><div class="tf-pair"><input id="tfRot" type="number" step="0.1" min="-360" max="360"></div>
+      <span class="tf-label" data-i18n="studio.tf.size"></span><div class="tf-pair"><input id="tfW" type="number" step="1" min="1"><input id="tfH" type="number" step="1" min="1"></div>
+      <span class="tf-label" data-i18n="studio.tf.boundsType"></span><div class="tf-pair"><select id="tfBT"></select></div>
+      <span class="tf-label" data-i18n="studio.tf.bounds"></span><div class="tf-pair"><input id="tfBW" type="number" step="1" min="1"><input id="tfBH" type="number" step="1" min="1"></div>
+      <span class="tf-label" data-i18n="studio.tf.crop"></span>
+      <div class="tf-crop">
+        <label><span data-i18n="studio.tf.left"></span><input id="tfCL" type="number" min="0" step="1"></label>
+        <label><span data-i18n="studio.tf.top"></span><input id="tfCT" type="number" min="0" step="1"></label>
+        <label><span data-i18n="studio.tf.right"></span><input id="tfCR" type="number" min="0" step="1"></label>
+        <label><span data-i18n="studio.tf.bottom"></span><input id="tfCB" type="number" min="0" step="1"></label>
+      </div>
+    </div>
+  </main>
+
+  <!-- audio: OBS's Advanced audio properties, every source with sound in one table -->
+  <main id="audio" class="popup-body" hidden>
+    <table class="audio-table">
+      <thead><tr><th data-i18n="studio.audio.name"></th><th data-i18n="studio.audio.volume"></th><th data-i18n="studio.audio.mono"></th><th data-i18n="studio.audio.sync"></th><th data-i18n="studio.audio.monitoring"></th><th data-i18n="studio.audio.tracks"></th></tr></thead>
+      <tbody id="audioRows"></tbody>
+    </table>
+  </main>
+
+  <!-- stats: OBS's Stats window, refreshed every second -->
+  <main id="stats" class="popup-body" hidden><table class="stats-table"><tbody id="statsRows"></tbody></table></main>
+
+  <!-- encoder: the stream encoder's own settings (preset, profile, rate control…) -->
+  <main id="encoder" class="popup-body" hidden><div id="encoderBody" class="form-grid"></div></main>
+
+  <!-- props: one source's properties -->
+  <main id="props" class="popup-body" hidden><div id="propsBody" class="form-grid"></div></main>
+
+  <!-- filters: list on the left, the picked filter's properties on the right (OBS's "Filters for …" window) -->
+  <main id="filters" class="popup-body split" hidden>
+    <aside class="filter-side">
+      <ul id="filterList" class="rows"></ul>
+      <p id="noFilters" class="empty pad" data-i18n="studio.noFilters" hidden></p>
+      <select id="addFilter" data-i18n-aria="studio.addFilter"></select>
+    </aside>
+    <section class="filter-props">
+      <div id="filterProps" class="form-grid"></div>
+      <p id="pickFilter" class="empty" data-i18n="studio.pickFilter" hidden></p>
+    </section>
+  </main>
+
+  <!-- name: type a name (new scene, new source) -->
+  <form id="name" class="popup-body ask" hidden autocomplete="off">
+    <label class="field"><span id="nameLabel"></span><input id="nameInput" maxlength="80" spellcheck="false"></label>
+  </form>
+
+  <!-- confirm: "are you sure?" -->
+  <main id="confirm" class="popup-body ask" hidden><p id="confirmText" class="ask-text"></p></main>
+
+  <footer class="popup-foot">
+    <button id="reset" type="button" class="btn" data-i18n="studio.tf.reset" hidden></button>
+    <span class="grow"></span>
+    <button id="cancel" type="button" class="btn" data-i18n="studio.cancel" hidden></button>
+    <button id="ok" type="button" class="btn primary" data-i18n="studio.ok"></button>
+  </footer>
+
+  <script src="i18n.js"></script>
+  <script src="studio-ui.js"></script>
+  <script src="studio-popup.js"></script>
+</body>
+</html>

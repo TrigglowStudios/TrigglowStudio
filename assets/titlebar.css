@@ -1,0 +1,38 @@
+/* Figtree (OFL, fonts/Figtree-OFL.txt), bundled: the local CSP loads nothing remote. Same subsets as Google Fonts. */
+@font-face { font-family: Figtree; font-style: normal; font-weight: 400 800; font-display: swap; src: url(fonts/figtree-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: Figtree; font-style: normal; font-weight: 400 800; font-display: swap; src: url(fonts/figtree-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+:root { color-scheme: dark; --bg:#110f13; --line:rgb(239 233 225 / 0.1); --text:#efe9e1; --mute:rgb(239 233 225 / 0.62); --cyan:#a18aff; --ok:#5fd68a; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); font: 12px/1 Figtree, "Segoe UI Variable Text", system-ui, -apple-system, "Segoe UI", sans-serif; user-select: none; }
+#bar { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--line); -webkit-app-region: drag; }
+/* The OS draws the window buttons over the right edge (Windows/Linux) or traffic lights on the left (macOS). */
+body.win32 #bar, body.linux #bar { padding-right: 150px; }
+body.darwin #bar { padding-left: 84px; }
+.logo { width: 18px; height: 18px; border-radius: 5px; }
+.name { color: var(--text); font-weight: 600; letter-spacing: .01em; }
+.nav { display: flex; gap: 2px; margin-left: 8px; }
+.spacer { flex: 1; }
+button { -webkit-app-region: no-drag; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--mute); cursor: pointer; }
+button:hover:not(:disabled) { background: rgba(255,255,255,.08); color: var(--text); }
+button:disabled { opacity: .3; cursor: default; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+.hidden { display: none !important; }
+/* OBS link status: quiet dot, cyan when connected */
+.obs { display: inline-flex; align-items: center; gap: 6px; margin-right: 4px; padding: 0 8px; height: 24px; border: 1px solid var(--line); border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--mute); }
+.obs i { width: 7px; height: 7px; border-radius: 50%; background: var(--mute); }
+.obs.ok { color: var(--text); }
+.obs.ok i { background: var(--ok); }
+.obs.bad i { background: #f2645f; }
+/* update pill: quiet while downloading, a call to action once the new version is ready */
+button.pill { width: auto; padding: 0 10px; height: 24px; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--mute); }
+button.pill:disabled { opacity: 1; }
+button.pill.ready { border: 0; background: linear-gradient(135deg, #00d2ff, #c44dff); color: #0B0C12; cursor: pointer; }
+button.pill.ready:hover:not(:disabled) { background: linear-gradient(135deg, #00d2ff, #c44dff); filter: brightness(1.1); color: #0B0C12; }
+svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Warm look: rounded controls, sentence case, the ready-to-install pill is the one violet call to action */
+.logo { border-radius: 5px; }
+button { border-radius: 8px; }
+.name { font-weight: 700; }
+button.pill.ready, button.pill.ready:hover:not(:disabled) { background: #7452ee; color: #fff; filter: none; }
+button.pill.ready:hover:not(:disabled) { background: color-mix(in srgb, #7452ee 88%, black); }

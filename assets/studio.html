@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; font-src 'self'; script-src 'self'">
+  <title>Trigglow Studio</title>
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body>
+  <header class="top">
+    <div class="now">
+      <h1 id="sceneTitle"></h1>
+      <span id="liveBadge" class="badge live" hidden><i></i><span data-i18n="studio.liveBadge"></span></span>
+      <span id="recBadge" class="badge rec" hidden><i></i><span data-i18n="studio.recording"></span></span>
+    </div>
+    <p id="status" class="status" role="status"></p>
+    <div class="actions">
+      <button id="stats" type="button" class="stats" data-i18n-title="studio.stats"></button>
+      <button id="studioMode" type="button" class="btn" aria-pressed="false" data-i18n="studio.sm.mode" data-i18n-title="studio.sm.hint"></button>
+      <button id="projectors" type="button" class="icon-btn" data-i18n-title="studio.proj.title" data-i18n-aria="studio.proj.title"></button>
+      <button id="toggleDocks" type="button" class="icon-btn" aria-pressed="true" data-i18n-title="studio.docks" data-i18n-aria="studio.docks"></button>
+      <button id="openSettings" type="button" class="icon-btn" data-i18n-title="studio.settings" data-i18n-aria="studio.settings"></button>
+      <button id="delay" type="button" class="btn" aria-pressed="false" data-i18n-title="studio.delayHint" hidden></button>
+      <button id="rec" type="button" class="btn"><i class="dot"></i><span data-i18n="studio.record"></span></button>
+      <button id="recStop" type="button" class="btn danger" hidden><i class="sq"></i><span data-i18n="studio.recordStop"></span></button>
+      <button id="go" type="button" class="btn primary" data-i18n="studio.golive"></button>
+      <button id="stop" type="button" class="btn danger" data-i18n="studio.stop" hidden></button>
+    </div>
+  </header>
+
+  <p id="crashed" class="crashed" role="alert" hidden><span data-i18n="studio.crashed"></span><button id="restartApp" type="button" class="btn primary" data-i18n="studio.restartApp"></button><button id="openLogs" type="button" class="btn" data-i18n="studio.openLogs"></button></p>
+
+  <div class="workspace">
+  <div class="work">
+  <main class="stage">
+    <!-- The engine draws the preview over this box; our layer (studio-overlay.html) sits on top of it. -->
+    <div id="preview" class="preview"></div>
+    <!-- Studio mode: the scene being edited on the left, program on the right, "Transition" between them. -->
+    <div id="smBar" class="sm-bar" hidden><button id="transitionNow" type="button" class="btn primary" data-i18n="studio.sm.transition"></button></div>
+    <div id="program" class="preview" hidden></div>
+  </main>
+
+  <div class="docks">
+    <section class="dock" aria-labelledby="hScenes">
+      <header class="dock-head"><h2 id="hScenes" data-i18n="studio.scenes"></h2><button id="addScene" type="button" class="icon-btn" data-i18n-title="studio.addScene" data-i18n-aria="studio.addScene"></button></header>
+      <!-- Scene collections, like OBS's: one select, and the menu for new/duplicate/rename/delete. -->
+      <div class="col-row"><select id="collection" data-i18n-aria="studio.col.title"></select><button id="collectionMenu" type="button" class="icon-btn quiet" data-i18n-title="studio.col.title" data-i18n-aria="studio.col.title"></button></div>
+      <ul id="scenes" class="rows" role="listbox" data-i18n-aria="studio.scenes"></ul>
+    </section>
+
+    <section class="dock" aria-labelledby="hSources">
+      <header class="dock-head"><h2 id="hSources" data-i18n="studio.sources"></h2><button id="openPicker" type="button" class="icon-btn" data-i18n-title="studio.addSource" data-i18n-aria="studio.addSource"></button></header>
+      <ul id="items" class="rows"></ul>
+      <p id="emptyScene" class="empty pad" data-i18n="studio.emptyScene" hidden></p>
+    </section>
+
+    <section class="dock" aria-labelledby="hMixer">
+      <header class="dock-head"><h2 id="hMixer" data-i18n="studio.mixer"></h2></header>
+      <ul id="mixer" class="rows mixer"></ul>
+    </section>
+  </div>
+  </div>
+
+  <!-- Trigglow's docks (activity, chat): the app places the web's /dock pages over these bodies (main.ts). -->
+  <aside id="sideDocks" class="side-docks">
+    <!-- Each dock brings its own title bar (name, status, menu). -->
+    <section class="dock side" data-dock="activity" data-i18n-aria="studio.dock.activity"><div class="dock-body" data-body="activity"></div></section>
+    <section class="dock side" data-dock="chat" data-i18n-aria="studio.dock.chat"><div class="dock-body" data-body="chat"></div></section>
+  </aside>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="studio-ui.js"></script>
+  <script src="studio.js"></script>
+</body>
+</html>

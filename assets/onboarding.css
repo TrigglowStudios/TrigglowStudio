@@ -1,0 +1,63 @@
+.onb { max-width: 600px; min-height: 100vh; margin: 0 auto; padding: 28px 24px 24px; display: flex; flex-direction: column; gap: 18px; }
+
+/* progress */
+.steps { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.steps li { flex: 1; height: 4px; border-radius: 999px; background: rgb(255 255 255 / 0.1); transition: background-color .2s ease; }
+.steps li.done { background: rgb(0 210 255 / 0.55); }
+.steps li.current { background: linear-gradient(90deg, var(--cyan), var(--magenta)); }
+
+/* step card */
+.step { display: none; margin: 0; padding: 1.75rem 1.75rem 1.5rem; }
+.step.active { display: block; animation: rise .25s ease-out both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.step h1 { font-size: 1.625rem; margin-bottom: 6px; }
+.lead { font-size: 0.9375rem; color: var(--mist); margin: 0 0 18px; }
+#s-welcome, #s-done { text-align: center; }
+#s-welcome .logo, #s-done .logo { margin: 0 auto 14px; display: block; }
+.bullets { margin: 0 auto; padding: 0; max-width: 420px; list-style: none; text-align: left; }
+.bullets li { position: relative; padding: 6px 0 6px 26px; color: var(--mist); font-size: 0.9375rem; }
+.bullets li::before { content: ""; position: absolute; left: 4px; top: 13px; width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), var(--magenta)); }
+.actions.left { justify-content: flex-start; margin-top: 14px; flex-wrap: wrap; }
+.result { font-size: 0.9375rem; margin: 0 0 6px; }
+.result.ok { color: var(--cyan); }
+
+/* OBS checklist */
+.checks { margin: 0 0 14px; padding: 0; list-style: none; }
+.checks li { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 0.9375rem; color: var(--mist); }
+.checks li + li { border-top: 1px solid var(--line); }
+.mark { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.2); font-size: 12px; line-height: 1; color: var(--mute); }
+li.ok .mark { border-color: transparent; background: var(--cyan); color: var(--ink); }
+li.ok .mark::before { content: ""; width: 4px; height: 8px; margin-top: -2px; border: solid var(--ink); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+li.bad .mark { border-color: transparent; background: rgb(255 107 107 / 0.18); color: var(--danger); }
+li.bad .mark::before, li.bad .mark::after { content: ""; grid-area: 1 / 1; width: 10px; height: 2px; border-radius: 1px; background: currentColor; transform: rotate(45deg); }
+li.bad .mark::after { transform: rotate(-45deg); }
+li.unknown .mark::before { content: "–"; }
+li.wait .mark { border-top-color: var(--cyan); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.howto { margin: 10px 0 0; padding-left: 1.3rem; font-size: 0.875rem; color: var(--mist); }
+.howto li { padding: 2px 0; }
+button.link { min-height: 0; padding: 0.5rem 0.4rem; border: 0; background: none; color: var(--cyan); font-weight: 500; }
+button.link:hover:not(:disabled) { background: none; border: 0; transform: none; text-decoration: underline; }
+
+/* overlays */
+.ovlist { margin: 0 0 12px; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 0.75rem; overflow: hidden; }
+.ovlist li { display: flex; align-items: center; gap: 12px; padding: 0.7rem 0.9rem; font-size: 0.9375rem; color: var(--text); }
+.ovlist li + li { border-top: 1px solid var(--line); }
+.ovlist .name { flex: 1; }
+.ovlist .st { font-size: 0.8125rem; color: var(--mute); }
+.ovlist .st.ok { color: var(--cyan); } .ovlist .st.bad { color: var(--danger); }
+.scene { margin: 0; }
+
+/* footer nav */
+.onb-nav { display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 4px; }
+.grow { flex: 1; }
+
+/* Warm look: flat progress (violet = current, mist = done), state green for success */
+.steps li { background: var(--line); }
+.steps li.done { background: rgb(239 233 225 / 0.45); }
+.steps li.current { background: var(--cyan); }
+.bullets li::before { background: var(--cyan); width: 7px; height: 7px; top: 14px; }
+li.ok .mark { background: var(--ok); }
+li.bad .mark { background: color-mix(in srgb, var(--danger) 18%, transparent); }
+.result.ok, .ovlist .st.ok { color: var(--ok); }
+.ovlist { border-radius: 10px; }

@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Trigglow Studio</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
+    canvas { display: block; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <!-- The layer over Studio's preview (main.ts placeStudioOverlay): selection border and handles, and the mouse. -->
+  <canvas id="c"></canvas>
+  <script src="studio-overlay.js"></script>
+</body>
+</html>

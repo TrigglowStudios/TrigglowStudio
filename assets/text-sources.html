@@ -1,0 +1,26 @@
+<!doctype html>
+<html class="embedded">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; script-src 'self'">
+  <title>OBS text sources</title>
+  <link rel="stylesheet" href="shell.css">
+</head>
+<body class="embedded flat">
+  <main class="panel">
+    <section class="card">
+      <h2 data-i18n="text.title"></h2>
+      <p id="obsNote" class="callout warn hidden" role="status"></p>
+      <ul class="plain" id="tsList"></ul>
+      <p id="tsEmpty" class="hint" data-i18n="text.empty"></p>
+      <div class="ts-add">
+        <select id="tsSelect" aria-label="Data"></select>
+        <button id="tsAdd" class="primary" data-i18n="text.add"></button>
+      </div>
+    </section>
+  </main>
+  <script src="i18n.js"></script>
+  <script src="embed.js"></script>
+  <script src="text-sources.js"></script>
+</body>
+</html>

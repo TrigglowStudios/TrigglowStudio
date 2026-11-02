@@ -1,0 +1,115 @@
+# Builds the Trigglow Studio installers and publishes them as a GitHub release.
+# Start it with:  pnpm release patch --push   (bumps the version and pushes the desktop-vX.Y.Z tag)
+# "Run workflow" by hand only rebuilds a tag that is already on GitHub.
+# Installed apps update themselves from the Trigglow API's /api/desktop/update feed, which reads these releases.
+name: Release
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build, e.g. desktop-v0.10.0"
+        required: true
+
+permissions:
+  contents: write # create the release and upload the installers
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: Windows }
+          - { os: ubuntu-latest, name: Linux }
+          # macOS needs an Apple Developer ID + notarization for the app AND for auto-update to work (Squirrel.Mac
+          # refuses unsigned updates). Add { os: macos-latest, name: macOS } once the certificate secrets exist.
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1" # electron-builder downloads the runtime it packages itself
+        run: pnpm install --frozen-lockfile
+
+      - name: Tag must match the app version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "desktop-v$VERSION" ]; then
+            echo "Tag $TAG does not match package.json version $VERSION — use 'pnpm release'."
+            exit 1
+          fi
+
+      - name: Test
+        run: pnpm test
+
+      - name: Linux packaging tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools # rpmbuild (.rpm), bsdtar (.pacman)
+
+      # Trigglow Studio's engine (and the Dynamic Delay core) go inside the Windows installer: pinned and checked
+      # against their SHA-256 by scripts/fetch-osn.mjs.
+      - name: Fetch Studio engine
+        if: runner.os == 'Windows'
+        run: pnpm studio:fetch
+
+      - name: Build installers
+        run: pnpm dist
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Trigglow Studio ${{ env.TAG }}
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+          files: |
+            release/*.exe
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+            release/*.pacman
+            release/*.tar.gz
+            release/*.dmg
+            release/*.zip
+            release/*.blockmap
+            release/latest*.yml
+
+  # Posts the release's CHANGELOG section to the official Discord as TrigglowBot (through the Trigglow API).
+  # Secret: SIBLING_SYNC_SECRET (same as the API's); without it the step skips.
+  announce:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      SIBLING_SYNC_SECRET: ${{ secrets.SIBLING_SYNC_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/announce-release.mjs "$TAG"

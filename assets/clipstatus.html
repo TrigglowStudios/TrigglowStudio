@@ -1,0 +1,19 @@
+<!doctype html>
+<html class="embedded">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; script-src 'self'">
+  <title>Clip status</title>
+  <link rel="stylesheet" href="shell.css">
+</head>
+<body class="embedded">
+  <div id="banner" class="clipbanner hidden" role="status" aria-live="polite">
+    <span id="spin" class="spin hidden" aria-hidden="true"></span>
+    <span id="icon" class="cb-icon hidden" aria-hidden="true"></span>
+    <div class="cb-text"><strong id="cbTitle"></strong><span id="cbBody"></span></div>
+  </div>
+  <script src="i18n.js"></script>
+  <script src="embed.js"></script>
+  <script src="clipstatus.js"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+# Trigglow desktop — installers + the metadata the auto-updater reads (latest*.yml / *.blockmap).
+# Build locally:   pnpm desktop:dist         (installer for THIS OS, into apps/desktop/release)
+# Release:         pnpm desktop:release patch  (bumps the version, tags desktop-vX.Y.Z; CI builds + publishes)
+appId: com.trigglow.desktop
+productName: Trigglow
+copyright: Copyright © Trigglow Studios
+
+directories:
+  output: release
+
+# Plain files instead of app.asar: the bundled screens are served to the UI over a custom protocol straight from
+# disk, and this app has no native modules or secrets in its sources worth hiding.
+asar: false
+npmRebuild: false
+
+# Electron's own switches, flipped in the binary. No running as plain Node (ELECTRON_RUN_AS_NODE), no NODE_OPTIONS or
+# --inspect: the unsigned exe in a user-writable folder must not double as a script runner. Cookies (the session) are
+# encrypted with the OS keychain. asar stays off (see above), so the asar-only fuses stay off too.
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableCookieEncryption: true
+
+# Chromium UI strings only for the app's languages (en, es, pt-BR, zh, fr, it, de): the other ~50 packs are ~44 MB.
+electronLanguages: [en-US, es, es-419, pt-BR, zh-CN, fr, it, de]
+
+files:
+  - dist/**/*
+  - "!dist/**/*.test.js"
+  - "!dist/**/*.map"
+  - assets/**/*
+  - package.json
+
+# No spaces in names: GitHub rewrites them in release asset names, which would break the updater's latest.yml.
+artifactName: Trigglow-${version}-${os}-${arch}.${ext}
+
+# Where the installed app looks for updates. The app overrides this at runtime (TRIGGLOW_UPDATE_URL), and the default
+# is the API's /api/desktop/update feed (see apps/api/src/routes/desktop-updates.ts) — this value is the fallback.
+# The GPL texts and the third-party notice (GPL: they go with every copy of the app).
+extraResources:
+  - from: LICENSE
+    to: licenses/LICENSE.txt
+  - from: licenses
+    to: licenses
+
+publish:
+  provider: generic
+  url: https://api.trigglow.com/api/desktop/update
+
+# Double-clicking a .overlaytrigglow opens Trigglow, which uploads it and shows the import wizard (src/pack-open.ts).
+fileAssociations:
+  - ext: overlaytrigglow
+    name: TrigglowPack
+    description: Trigglow overlay pack
+    mimeType: application/x-trigglow-pack
+    role: Viewer
+
+win:
+  # Trigglow Studio's engine (vendor/, from `pnpm studio:fetch`) ships inside the app, at the same path as in dev
+  # (studio.ts OSN_DIR). Its debug symbols stay out.
+  files:
+    - vendor/obs-studio-node/**/*
+    - "!vendor/obs-studio-node/**/*.pdb"
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: assets/icon.ico # multi-size (16–256): the taskbar/Start pick the small frames, a lone PNG renders badly
+nsis:
+  oneClick: true # no wizard, no admin rights: installs per user and updates silently
+  perMachine: false
+  include: installer.nsh # installs to %LOCALAPPDATA%\Trigglow
+  deleteAppDataOnUninstall: false
+
+linux:
+  executableName: trigglow # the default (from the scoped package name) has characters AppImage rejects
+  # Electron uses package.json's desktopName as the window's app_id / WM_CLASS: the .desktop file must carry the same
+  # name and StartupWMClass, or GNOME/KDE show a generic icon in the dock instead of ours.
+  syncDesktopName: true
+  # One package per family, so most distros install natively: AppImage (any distro; portable, auto-updates, needs
+  # libfuse2), deb (Debian/Ubuntu/Mint/Pop!_OS), rpm (Fedora/openSUSE/RHEL), pacman (Arch/Manjaro/EndeavourOS),
+  # tar.gz (anything else). The packages need no FUSE and register the .overlaytrigglow file association.
+  # No Flatpak/Snap: their sandbox can't see the OBS process, OBS's config folder or other players (MPRIS) — all core.
+  target:
+    - AppImage
+    - deb
+    - rpm
+    - pacman
+    - tar.gz
+  category: AudioVideo
+  icon: assets/icon.png
+  maintainer: Trigglow <support@trigglow.com>
+  synopsis: Trigglow desktop app for OBS
+deb:
+  recommends: [playerctl] # "now playing" for the music overlay (MPRIS); electron-builder's default depends are kept
+rpm:
+  fpm: ['--rpm-tag', 'Recommends: playerctl']
+pacman:
+  fpm: ['--pacman-optional-depends', 'playerctl: now playing for the music overlay']
+
+mac:
+  target:
+    - dmg
+    - zip # the updater on macOS consumes the zip
+  category: public.app-category.video
+  icon: assets/icon.png

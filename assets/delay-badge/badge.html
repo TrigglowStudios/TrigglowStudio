@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src 'self'; img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+  <title>Delay badge</title>
+  <style>
+    @font-face { font-family: 'Archivo'; font-weight: 600; src: url('Archivo-SemiBold.ttf'); }
+    @font-face { font-family: 'Archivo'; font-weight: 700; src: url('Archivo-Bold.ttf'); }
+    @font-face { font-family: 'Geist Mono'; font-weight: 500; src: url('GeistMono-Medium.ttf'); }
+  </style>
+</head>
+<body>
+  <!-- Draws Trigglow Dynamic Delay's "DELAY 30 s" badge for Studio (main.ts renderDelayBadges), the plugin's own
+       design: obs-trigglow-dynamic-delay src/overlay-badge.cpp RenderDelayBadge, same sizes, colours and fonts. -->
+  <script src="badge.js"></script>
+</body>
+</html>

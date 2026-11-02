@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; script-src 'self'">
+  <title>Trigglow Studio</title>
+  <link rel="stylesheet" href="shell.css">
+  <link rel="stylesheet" href="signin.css">
+</head>
+<body class="signin-page">
+  <!-- Ambient background glow & grid -->
+  <div class="ambient-glow ambient-glow-1" aria-hidden="true"></div>
+  <div class="ambient-glow ambient-glow-2" aria-hidden="true"></div>
+  <div class="grid-overlay" aria-hidden="true"></div>
+  <!-- Language selector -->
+  <aside class="lang-selector-container" aria-label="Language selector">
+    <div class="lang-picker">
+      <svg class="lang-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <select id="lang-select" aria-label="Language" data-i18n-aria="signin.lang">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="pt-BR">Português (Brasil)</option>
+        <option value="zh">中文</option>
+        <option value="fr">Français</option>
+        <option value="it">Italiano</option>
+        <option value="de">Deutsch</option>
+        <option value="ru">Русский</option>
+        <option value="ko">한국어</option>
+        <option value="ja">日本語</option>
+        <option value="hi">हिन्दी</option>
+        <option value="ca">Català</option>
+        <option value="ca-valencia">Valencià</option>
+        <option value="eu">Euskara</option>
+        <option value="gl">Galego</option>
+        <option value="uk">Українська</option>
+      </select>
+    </div>
+  </aside>
+
+  <!-- Launchpad layout container -->
+  <main class="launchpad-container">
+    <!-- LEFT PANEL: Product Value & Features for Streamers -->
+    <section class="hero-panel">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span data-i18n="signin.hero.badge"></span>
+      </div>
+
+      <h1 class="hero-title" data-i18n="signin.hero.title"></h1>
+      <p class="hero-desc" data-i18n="signin.hero.desc"></p>
+
+      <!-- 4 key features grid -->
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon-box cyan">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div>
+            <h3 data-i18n="signin.feat.obsTitle"></h3>
+            <p data-i18n="signin.feat.obsDesc"></p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box magenta">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+          </div>
+          <div>
+            <h3 data-i18n="signin.feat.clipsTitle"></h3>
+            <p data-i18n="signin.feat.clipsDesc"></p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box amber">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div>
+            <h3 data-i18n="signin.feat.notifsTitle"></h3>
+            <p data-i18n="signin.feat.notifsDesc"></p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box purple">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 16 12 12 8"/></svg>
+          </div>
+          <div>
+            <h3 data-i18n="signin.feat.overlaysTitle"></h3>
+            <p data-i18n="signin.feat.overlaysDesc"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick workflow steps -->
+      <div class="steps-flow">
+        <div class="step-item">
+          <span class="step-num">1</span>
+          <span data-i18n="signin.step1">Kick / Twitch / Email</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="step-item">
+          <span class="step-num">2</span>
+          <span data-i18n="signin.step2">OBS Auto-connect</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="step-item">
+          <span class="step-num">3</span>
+          <span data-i18n="signin.step3">Overlays & Clips</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Action / Connection Glass Card -->
+    <section class="action-panel">
+      <div class="signin-card">
+        <!-- Logo -->
+        <div class="logo-box">
+          <div class="logo-aura"></div>
+          <img class="app-logo" src="icon.png" alt="Trigglow">
+        </div>
+
+        <h2 class="card-title" data-i18n="signin.card.title"></h2>
+        <p class="card-desc" data-i18n="signin.card.desc"></p>
+
+        <!-- Supported Platforms -->
+        <div class="platforms-pill">
+          <span class="platform-chip kick">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M3 3h4.8v6.4L13.2 3H19l-7.2 8.4L19.5 21h-5.9l-5.8-7.6V21H3V3z" /></svg>
+            <span>Kick</span>
+          </span>
+          <span class="platform-chip twitch">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" /></svg>
+            <span>Twitch</span>
+          </span>
+          <span class="platform-chip email">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+            <span data-i18n="signin.platform.email">Email</span>
+          </span>
+        </div>
+
+        <!-- Error Alert Banner -->
+        <div id="error-container" class="error-banner hidden" role="alert">
+          <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="error" class="error-text"></span>
+        </div>
+
+        <!-- IDLE STATE -->
+        <div class="state-container" id="idle">
+          <button id="start" class="cta-button primary" type="button">
+            <span class="cta-text" data-i18n="signin.cta"></span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+
+          <p class="cta-subtext" data-i18n="signin.ctaSub"></p>
+
+          <div class="new-user-note">
+            <span data-i18n="signin.newHere"></span>
+          </div>
+
+          <div class="secure-note">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span data-i18n="signin.secure"></span>
+          </div>
+        </div>
+
+        <!-- WAITING STATE -->
+        <div class="state-container waiting-box hidden" id="waiting">
+          <div class="radar-spinner">
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-dot">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+          </div>
+          <h3 class="waiting-title" data-i18n="signin.waitingTitle"></h3>
+          <p class="waiting-desc" data-i18n="signin.waitingDesc"></p>
+          <div class="waiting-actions">
+            <button id="again" class="btn-subtle primary-subtle" type="button">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <span data-i18n="signin.again"></span>
+            </button>
+            <button id="cancel" class="btn-subtle ghost" type="button" data-i18n="signin.cancel"></button>
+          </div>
+        </div>
+
+        <!-- Card Footer -->
+        <footer class="card-footer">
+          <span id="version" class="app-version">Trigglow Studio</span>
+        </footer>
+      </div>
+    </section>
+  </main>
+
+  <script src="i18n.js"></script>
+  <script src="signin.js"></script>
+</body>
+</html>

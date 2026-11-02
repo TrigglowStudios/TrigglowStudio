@@ -1,0 +1,7 @@
+node_modules/
+dist/
+release/
+# Trigglow Studio engine (pnpm studio:fetch), ~840 MB of third-party binaries
+vendor/
+*.log
+.env*

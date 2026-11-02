@@ -1,0 +1,304 @@
+<!doctype html>
+<html class="embedded">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; script-src 'self'">
+  <title>Trigglow desktop</title>
+  <link rel="stylesheet" href="shell.css">
+</head>
+<body class="embedded">
+  <main class="panel sx">
+    <header class="sx-head">
+      <span class="chip" id="obsChip"><span class="dot" id="obsDot"></span><span id="obsStatus"></span></span>
+      <span class="chip"><span class="dot" id="serverDot"></span><span id="serverStatus"></span></span>
+      <span id="version" class="version"></span>
+    </header>
+
+    <nav class="sx-tabs" role="tablist">
+      <button role="tab" data-tab="obs" id="obsTab"><span data-i18n="settings.tab.obs"></span><span class="dot bad hidden" id="obsTabDot"></span></button>
+      <button role="tab" data-tab="clips" data-i18n="settings.tab.clips" id="clipsTab"></button>
+      <button role="tab" data-tab="hotkeys" data-i18n="settings.tab.hotkeys"></button>
+      <button role="tab" data-tab="studio" data-i18n="settings.tab.studio" class="hidden" id="studioTab"></button>
+      <button role="tab" data-tab="general" data-i18n="settings.tab.general"></button>
+    </nav>
+
+    <div class="sx-pane" data-pane="obs" role="tabpanel">
+      <section class="card">
+        <h2 data-i18n="settings.obs"></h2>
+        <p class="hint" data-i18n="settings.obsHint"></p>
+        <div id="obsHintBox" class="callout" role="status"></div>
+        <div id="fix-confirm" class="callout warn hidden">
+          <span data-i18n="fix.confirm"></span>
+          <div class="actions left">
+            <button id="fix-yes" class="primary" data-i18n="fix.yes"></button>
+            <button id="fix-no" data-i18n="fix.no"></button>
+          </div>
+        </div>
+        <div class="actions left">
+          <div id="fix" class="hidden"><button id="fix-btn" class="primary"></button></div>
+          <button id="retry" data-i18n="settings.retry"></button>
+        </div>
+        <p id="fix-msg" class="status" role="status"></p>
+
+        <div class="label sx-gap" data-i18n="settings.mode"></div>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="mode" value="auto" id="mode-auto"><span data-i18n="settings.obsAuto"></span><small data-i18n="settings.obsAutoHint"></small></label>
+          <label><input type="radio" name="mode" value="manual" id="mode-manual"><span data-i18n="settings.obsManual"></span></label>
+        </div>
+
+        <label class="switch sx-gap">
+          <span><span data-i18n="settings.openObs"></span><small data-i18n="settings.openObsHint"></small></span>
+          <input id="openObsOnLaunch" type="checkbox">
+        </label>
+
+        <div id="manual" class="manual hidden">
+          <div class="row">
+            <label><span data-i18n="settings.host"></span><input id="host" type="text" maxlength="255"></label>
+            <label><span data-i18n="settings.port"></span><input id="port" type="number" min="1" max="65535"></label>
+          </div>
+          <label><span data-i18n="settings.password"></span><input id="password" type="password" autocomplete="off"></label>
+        </div>
+      </section>
+    </div>
+
+    <div class="sx-pane" data-pane="clips" role="tabpanel">
+      <section class="card" id="clipCard"></section>
+    </div>
+
+    <div class="sx-pane" data-pane="hotkeys" role="tabpanel">
+      <section class="card">
+        <h2 data-i18n="ctl.title"></h2>
+        <p class="hint" data-i18n="ctl.hint"></p>
+        <ul class="plain" id="ctlList"></ul>
+      </section>
+    </div>
+
+    <div class="sx-pane" data-pane="studio" role="tabpanel">
+      <div id="studioCards" class="hidden">
+        <!-- Profiles, like OBS's: named sets of the settings below. -->
+        <section class="card">
+          <h2 data-i18n="studio.prof.title"></h2>
+          <p class="hint" data-i18n="studio.prof.hint"></p>
+          <div class="path-row"><select id="stProfile" data-i18n-aria="studio.prof.title"></select><button id="stProfNew" type="button" data-i18n="studio.prof.new"></button><button id="stProfCopy" type="button" data-i18n="studio.col.duplicate"></button><button id="stProfRename" type="button" data-i18n="studio.rename"></button><button id="stProfRemove" type="button" data-i18n="studio.remove"></button></div>
+          <div id="stProfAsk" class="path-row hidden"><input id="stProfName" type="text" maxlength="80" spellcheck="false" data-i18n-aria="studio.prof.name"><button id="stProfOk" type="button" class="primary" data-i18n="studio.prof.ok"></button><button id="stProfCancel" type="button" data-i18n="studio.prof.cancel"></button></div>
+          <p id="stProfMsg" class="hint hidden" role="status"></p>
+        </section>
+        <!-- Migration from OBS / Streamlabs (docs/design/trigglow-studio.md §5): their files are only read. -->
+        <section class="card" id="stImport">
+          <h2 data-i18n="studio.imp.title"></h2>
+          <p class="hint" data-i18n="studio.imp.hint"></p>
+          <p id="stImpNone" class="hint hidden" data-i18n="studio.imp.none"></p>
+          <div id="stImpForm">
+            <label class="field"><span data-i18n="studio.imp.collection"></span><select id="stImpPick"></select></label>
+            <label class="check"><input id="stImpProfile" type="checkbox"><span data-i18n="studio.imp.profile"></span></label>
+            <label class="check"><input id="stImpKey" type="checkbox"><span data-i18n="studio.imp.key"></span></label>
+            <label class="check"><input id="stImpCopy" type="checkbox"><span data-i18n="studio.imp.copy"></span></label>
+            <div id="stImpConfirm" class="callout warn hidden" role="alert">
+              <span data-i18n="studio.imp.confirm"></span>
+              <div class="actions left"><button id="stImpYes" type="button" class="primary" data-i18n="studio.imp.confirmGo"></button><button id="stImpNo" type="button" data-i18n="studio.cancel"></button></div>
+            </div>
+            <div class="actions left"><button id="stImpGo" type="button" class="primary" data-i18n="studio.imp.go"></button><button id="stImpUndo" type="button" class="hidden" data-i18n="studio.imp.undo"></button></div>
+          </div>
+          <p id="stImpMsg" class="status hidden" role="status"></p>
+          <div id="stImpReport" class="imp-report hidden"></div>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.target"></h2>
+          <p class="hint" data-i18n="studio.target.hint"></p>
+          <label class="field"><select id="stTarget"></select></label>
+          <p id="stTargetMsg" class="hint hidden" role="status"></p>
+          <p id="stRelinkHint" class="hint hidden" data-i18n="studio.relinkHint"></p>
+          <div class="actions left"><button id="stManage" type="button" data-i18n="studio.manageChannels"></button><button id="stRelink" type="button" class="hidden" data-i18n="studio.relinkTwitch"></button></div>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.keys"></h2>
+          <p class="hint" data-i18n="studio.keysHint"></p>
+          <ul class="plain key-list" id="stKeys"></ul>
+          <p id="stNoKeys" class="hint" data-i18n="studio.noKeys"></p>
+          <form id="stKeyForm" class="key-form" autocomplete="off">
+            <h3 data-i18n="studio.addKey"></h3>
+            <div class="grid2">
+              <label class="field"><span data-i18n="studio.keyPlatform"></span><select id="stKeyPlatform"></select></label>
+              <label class="field"><span data-i18n="studio.keyLabel"></span><input id="stKeyLabel" type="text" maxlength="60" spellcheck="false"></label>
+            </div>
+            <label class="field" id="stKeyServerRow"><span data-i18n="studio.keyServer"></span><input id="stKeyServer" type="text" spellcheck="false" placeholder="rtmps://…"></label>
+            <p id="stKeyServerFixed" class="hint hidden"></p>
+            <label class="field"><span data-i18n="studio.keyValue"></span><input id="stKeyValue" type="password" spellcheck="false" autocomplete="off"></label>
+            <p id="stKeyMsg" class="status hidden" role="status"></p>
+            <div class="actions left"><button id="stKeySave" type="submit" class="primary" data-i18n="studio.keySave"></button></div>
+          </form>
+        </section>
+        <!-- The rest follows OBS's Settings: Stream, Video, Audio, Recording, Transitions, Advanced. Each field saves on change. -->
+        <section class="card">
+          <h2 data-i18n="studio.streamGroup"></h2>
+          <div class="grid2">
+            <label class="field"><span data-i18n="studio.encoder"></span><select id="stEncoder"></select></label>
+            <label class="field"><span data-i18n="studio.bitrate"></span><input id="stBitrate" type="number" min="500" max="50000" step="100"></label>
+            <label class="field"><span data-i18n="studio.audioBitrate"></span><select id="stAudioBitrate"></select></label>
+          </div>
+          <div class="actions left"><button id="stEncoderProps" type="button" data-i18n="studio.encoderSettings"></button><button id="stAutoConfig" type="button" data-i18n="studio.ac.run"></button></div>
+          <div id="stAutoBox" class="callout hidden" role="status">
+            <p id="stAutoText"></p>
+            <div class="actions left"><button id="stAutoApply" type="button" class="primary hidden" data-i18n="studio.ac.apply"></button></div>
+          </div>
+          <p id="stApplied" class="hint hidden" data-i18n="studio.savedNext" role="status"></p>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.videoGroup"></h2>
+          <div class="grid2">
+            <label class="field"><span data-i18n="studio.canvas"></span><select id="stCanvas"></select></label>
+            <label class="field"><span data-i18n="studio.output"></span><select id="stOutput"></select></label>
+            <label class="field"><span data-i18n="studio.fps"></span><select id="stFps"></select></label>
+            <label class="field"><span data-i18n="studio.scaleFilter"></span><select id="stScale"></select></label>
+            <label class="field"><span data-i18n="studio.colorFormat"></span><select id="stColorFormat"></select></label>
+            <label class="field"><span data-i18n="studio.colorSpace"></span><select id="stColorSpace"></select></label>
+            <label class="field"><span data-i18n="studio.colorRange"></span><select id="stColorRange"></select></label>
+          </div>
+          <div id="stCanvasRestart" class="callout hidden" role="status"><span data-i18n="studio.canvas.restart"></span><div class="actions left"><button id="stCanvasRelaunch" type="button" data-i18n="studio.restartApp"></button></div></div>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.audioGroup"></h2>
+          <div class="grid2">
+            <label class="field"><span data-i18n="studio.sampleRate"></span><select id="stSampleRate"></select></label>
+            <label class="field"><span data-i18n="studio.channels"></span><select id="stChannels"></select></label>
+            <label class="field"><span data-i18n="studio.monitoringDevice"></span><select id="stMonitorDev"></select></label>
+          </div>
+          <label class="check"><input id="stDucking" type="checkbox"><span data-i18n="studio.disableDucking"></span></label>
+          <div id="stAudioRestart" class="callout hidden" role="status"><span data-i18n="studio.audioRestart"></span><div class="actions left"><button id="stAudioRelaunch" type="button" data-i18n="studio.restartApp"></button></div></div>
+          <h3 data-i18n="studio.globalAudio"></h3>
+          <p class="hint" data-i18n="studio.globalAudioHint"></p>
+          <div class="grid2" id="stGlobalAudio"></div>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.recordGroup"></h2>
+          <div class="field"><span data-i18n="studio.recFolder"></span><div class="path-row"><code id="stFolder" class="path"></code><button id="stFolderPick" type="button" data-i18n="studio.change"></button><button id="stFolderOpen" type="button" data-i18n="studio.open"></button></div></div>
+          <div class="grid2">
+            <label class="field"><span data-i18n="studio.recFormat"></span><select id="stFormat"></select></label>
+            <label class="field"><span data-i18n="studio.recQuality"></span><select id="stRecQuality"></select></label>
+            <label class="field"><span data-i18n="studio.split"></span><select id="stSplit"></select></label>
+            <label class="field" id="stSplitMinRow"><span data-i18n="studio.splitMinutes"></span><input id="stSplitMin" type="number" min="1" max="1440" step="1"></label>
+            <label class="field" id="stSplitMBRow"><span data-i18n="studio.splitMB"></span><input id="stSplitMB" type="number" min="50" max="1000000" step="50"></label>
+          </div>
+          <label class="check" id="stRemuxRow"><input id="stRemux" type="checkbox"><span data-i18n="studio.remux"></span></label>
+          <div class="field"><span data-i18n="studio.recTracks"></span><div id="stRecTracks" class="tracks"></div></div>
+          <p class="hint" data-i18n="studio.recTracksHint"></p>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.transitionGroup"></h2>
+          <div class="grid2">
+            <label class="field"><span data-i18n="studio.transition"></span><select id="stTransition"></select></label>
+            <label class="field"><span data-i18n="studio.trMs"></span><input id="stTrMs" type="number" min="50" max="5000" step="50"></label>
+          </div>
+          <div id="stStinger" class="hidden">
+            <div class="field"><span data-i18n="studio.stinger.file"></span><div class="path-row"><code id="stStingerFile" class="path"></code><button id="stStingerPick" type="button" data-i18n="studio.change"></button></div></div>
+            <label class="field"><span data-i18n="studio.stinger.point"></span><input id="stStingerPoint" type="number" min="0" max="30000" step="50"></label>
+          </div>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.advancedGroup"></h2>
+          <label class="check"><input id="stReconnect" type="checkbox"><span data-i18n="studio.reconnect"></span></label>
+          <div class="grid2" id="stReconnectRow">
+            <label class="field"><span data-i18n="studio.reconnectDelay"></span><input id="stReconnectDelay" type="number" min="1" max="30" step="1"></label>
+            <label class="field"><span data-i18n="studio.reconnectRetries"></span><input id="stReconnectRetries" type="number" min="1" max="10000" step="1"></label>
+          </div>
+          <label class="check"><input id="stDelay" type="checkbox"><span data-i18n="studio.delay"></span></label>
+          <div class="grid2" id="stDelayRow">
+            <label class="field"><span data-i18n="studio.delaySec"></span><input id="stDelaySec" type="number" min="1" max="1800" step="1"></label>
+            <label class="check"><input id="stDelayPreserve" type="checkbox"><span data-i18n="studio.delayPreserve"></span></label>
+          </div>
+          <div class="grid2">
+            <label class="field"><span data-i18n="studio.bindIP"></span><select id="stBindIP"></select></label>
+          </div>
+          <label class="check"><input id="stDynBitrate" type="checkbox"><span data-i18n="studio.dynamicBitrate"></span></label>
+          <label class="check"><input id="stLowLatency" type="checkbox"><span data-i18n="studio.lowLatency"></span></label>
+          <label class="check"><input id="stNetOpt" type="checkbox"><span data-i18n="studio.networkOptimizations"></span></label>
+          <label class="field"><span data-i18n="studio.priority"></span><select id="stPriority"></select></label>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.dd.title"></h2>
+          <p class="hint" data-i18n="studio.dd.desc"></p>
+          <p id="stDdMissing" class="callout hidden" data-i18n="studio.dd.missing"></p>
+          <div class="grid2">
+            <label class="field"><span data-i18n="studio.dd.seconds"></span><input id="stDdSec" type="number" min="1" max="60" step="1"></label>
+            <label class="field"><span data-i18n="studio.dd.quality"></span><select id="stDdQuality"></select></label>
+          </div>
+          <p class="hint" data-i18n="studio.dd.qualityHint"></p>
+          <label class="field"><span data-i18n="studio.dd.live"></span><select id="stDdLive"></select></label>
+          <p class="hint" data-i18n="studio.dd.liveHint"></p>
+          <label class="field"><span data-i18n="studio.dd.loading"></span><select id="stDdLoading"></select></label>
+          <div class="grid2">
+            <label class="check"><input id="stDdBadge" type="checkbox"><span data-i18n="studio.dd.badge"></span></label>
+            <label class="field"><span data-i18n="studio.dd.corner"></span><select id="stDdCorner"></select></label>
+          </div>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.hotkeys"></h2>
+          <p class="hint" data-i18n="studio.hkHint"></p>
+          <ul class="plain" id="stHotkeys"></ul>
+        </section>
+        <section class="card">
+          <h2 data-i18n="studio.hk.title"></h2>
+          <p class="hint" data-i18n="studio.hk.hint"></p>
+          <div id="stHkTargets"></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="sx-pane" data-pane="general" role="tabpanel">
+      <section class="card hidden" id="engineCard">
+        <h2 data-i18n="settings.engine"></h2>
+        <div class="engines" role="radiogroup" data-i18n-aria="settings.engine">
+          <label class="engine"><input type="radio" name="engine" value="studio"><span><strong data-i18n="onb.engine.studio"></strong><small data-i18n="onb.engine.studioDesc"></small></span></label>
+          <label class="engine"><input type="radio" name="engine" value="obs"><span><strong data-i18n="onb.engine.obs"></strong><small data-i18n="onb.engine.obsDesc"></small></span></label>
+        </div>
+        <p id="engineRestart" class="hint hidden"><span id="engineRestartText"></span> <button id="engineRestartBtn" type="button" data-i18n="settings.engine.restartBtn"></button></p>
+      </section>
+      <section class="card">
+        <h2 data-i18n="settings.app"></h2>
+        <label class="switch">
+          <span><span data-i18n="settings.closeToTray"></span><small id="closeToTrayHint" data-i18n="settings.closeToTrayHint"></small></span>
+          <input id="closeToTray" type="checkbox">
+        </label>
+        <label class="switch">
+          <span><span data-i18n="settings.openAtLogin"></span><small id="openAtLoginHint"></small></span>
+          <input id="openAtLogin" type="checkbox">
+        </label>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="settings.games"></h2>
+        <label class="switch">
+          <span><span data-i18n="settings.lolDetect"></span><small data-i18n="settings.lolDetectHint"></small></span>
+          <input id="lolDetect" type="checkbox">
+        </label>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="notif.title"></h2>
+        <p class="hint" data-i18n="notif.hint"></p>
+        <div class="actions left">
+          <button id="notifTest" data-i18n="notif.test"></button>
+          <a id="notifLink" class="linklike" target="_top" data-i18n="notif.configure"></a>
+        </div>
+        <p id="notifMsg" class="status" role="status"></p>
+      </section>
+
+      <section class="card" id="updateCard"></section>
+
+      <section class="card">
+        <h2 data-i18n="settings.setup"></h2>
+        <p class="hint" data-i18n="settings.setupHint"></p>
+        <div class="actions left"><button id="rerun" data-i18n="settings.rerunSetup"></button></div>
+      </section>
+    </div>
+  </main>
+  <script src="i18n.js"></script>
+  <script src="embed.js"></script>
+  <script src="obsfix.js"></script>
+  <script src="clipcard.js"></script>
+  <script src="updatecard.js"></script>
+  <script src="hotkeys.js"></script>
+  <script src="settings.js"></script>
+  <script src="extras.js"></script>
+</body>
+</html>

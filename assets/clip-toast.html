@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Trigglow clip toast</title>
+<style>
+  html, body { margin: 0; background: transparent; font-family: 'Segoe UI', system-ui, sans-serif; }
+  #t { position: fixed; left: 24px; bottom: 24px; padding: 12px 18px; background: #101114; color: #fff; border: 1px solid #2a2c33;
+       font-size: 18px; font-weight: 600; opacity: 0; transform: translateY(12px); transition: opacity .25s, transform .25s; }
+  #t.on { opacity: 1; transform: none; }
+  #t.done { border-color: #4ade80; } #t.failed { border-color: #f87171; }
+  @media (prefers-reduced-motion: reduce) { #t { transition: none; } }
+</style>
+<div id="t"></div>
+<script>
+  // Add this page as an OBS Browser Source using your dock URL with the path swapped:
+  // http://127.0.0.1:45455/clip-toast.html?token=<the local server token> (the port may differ if 45455 was taken).
+  const t = document.getElementById('t');
+  const text = { saving: 'Saving clip…', compressing: 'Saving clip…', uploading: 'Uploading clip…', done: 'Clip saved ✓', failed: 'Clip failed' };
+  let hide;
+  new EventSource('/api/stream?token=' + encodeURIComponent(new URLSearchParams(location.search).get('token') || '')).onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.type !== 'clip') return;
+    clearTimeout(hide);
+    if (m.phase === 'idle') return t.classList.remove('on');
+    t.className = 'on ' + m.phase;
+    t.textContent = text[m.phase] || '';
+    if (m.phase === 'done' || m.phase === 'failed') hide = setTimeout(() => t.classList.remove('on'), 4000);
+  };
+</script>
