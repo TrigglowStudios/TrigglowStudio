@@ -1,4 +1,4 @@
-import { session } from 'electron';
+import { session, shell } from 'electron';
 import { io, type Socket } from 'socket.io-client';
 import { parseNotification, type DesktopNotification } from './notify';
 import type { EngineLink } from './obs';
@@ -166,6 +166,19 @@ export class ApiLink {
     socket.on('desktop:data', () => this.onData?.());
     socket.on('desktop:now-playing-config', (raw: unknown) => {
       this.onNowPlayingConfig?.((raw as { enabled?: unknown } | null)?.enabled === true);
+    });
+    // Song requests in "Spotify app" mode: the API picked the next track, open it in the local Spotify client.
+    socket.on('desktop:spotify-play', (raw: unknown) => {
+      const trackId = (raw as { trackId?: unknown } | null)?.trackId;
+      if (typeof trackId !== 'string' || !/^[A-Za-z0-9]{22}$/.test(trackId)) {
+        return console.warn('[desktop] spotify-play: ignored invalid trackId');
+      }
+      // A plain spotify:track: URI only navigates in current clients; a position fragment makes the client
+      // start playback from there (community-reported trick). ponytail: if a client update drops it, the
+      // fallback is Spotify's local/Web API, not a media-key toggle (that would resume the old context).
+      shell.openExternal(`spotify:track:${trackId}#0:01`).catch((err) =>
+        console.warn('[desktop] spotify-play failed (Spotify not installed?):', err instanceof Error ? err.message : err),
+      );
     });
     socket.on('desktop:action', (raw: unknown) => {
       const action = parseAction(raw);

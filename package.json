@@ -1,7 +1,7 @@
 {
   "name": "@trigglow/desktop",
   "private": true,
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Trigglow Studio: the Trigglow desktop app, next to OBS or with its own broadcasting editor",
   "author": "Trigglow <support@trigglow.com>",
   "homepage": "https://trigglow.com",
