@@ -62,6 +62,8 @@ interface LolPlayer {
   championName?: string;
   /** "game_character_displayname_MissFortune": the Data Dragon id after the prefix. */
   rawChampionName?: string;
+  /** rawDisplayName "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName". */
+  summonerSpells?: { summonerSpellOne?: { rawDisplayName?: string }; summonerSpellTwo?: { rawDisplayName?: string } };
   isDead?: boolean;
   scores?: { kills?: number; deaths?: number; assists?: number; creepScore?: number };
   level?: number;
@@ -76,6 +78,8 @@ export interface LolGameData {
     championStats?: { currentHealth?: number; maxHealth?: number };
     currentGold?: number;
     level?: number;
+    /** The streamer's rune page (Live Client: only for the active player). */
+    fullRunes?: { generalRunes?: { id?: number }[]; primaryRuneTree?: { id?: number }; secondaryRuneTree?: { id?: number }; statRunes?: { id?: number }[] };
   };
   allPlayers?: LolPlayer[];
   events?: { Events?: LolEvent[] };
@@ -115,6 +119,10 @@ export interface LolLiveLine {
   mode?: string;
   allies?: string[];
   enemies?: string[];
+  /** Rune ids as spectator orders them (6 runes, keystone first, then 3 shards) and the two trees. */
+  perks?: { ids: number[]; style?: number; sub?: number };
+  /** Summoner spell ids ("SummonerFlash"). */
+  spells?: string[];
 }
 
 const champId = (p: LolPlayer | undefined) => {
@@ -137,7 +145,17 @@ export function liveLine(data: LolGameData): LolLiveLine | undefined {
     mode: data.gameData?.gameMode?.slice(0, 20),
     allies: (data.allPlayers ?? []).filter((x) => x.team === p.team).map(champId).filter((c): c is string => Boolean(c)).slice(0, 5),
     enemies: (data.allPlayers ?? []).filter((x) => x.team && x.team !== p.team).map(champId).filter((c): c is string => Boolean(c)).slice(0, 5),
+    perks: perksOf(data),
+    spells: [p.summonerSpells?.summonerSpellOne, p.summonerSpells?.summonerSpellTwo]
+      .map((x) => /SummonerSpell_(Summoner[A-Za-z0-9]+)_/.exec(x?.rawDisplayName ?? '')?.[1])
+      .filter((x): x is string => Boolean(x)),
   };
+}
+
+function perksOf(data: LolGameData): LolLiveLine['perks'] {
+  const r = data.activePlayer?.fullRunes;
+  const ids = [...(r?.generalRunes ?? []), ...(r?.statRunes ?? [])].map((x) => x.id).filter((x): x is number => typeof x === 'number');
+  return ids.length ? { ids, style: r?.primaryRuneTree?.id, sub: r?.secondaryRuneTree?.id } : undefined;
 }
 
 /** How often the live line goes to Trigglow (the overlay doesn't need every 2 s poll). */

@@ -84,6 +84,36 @@ test("liveLine reads the player's KDA, CS, gold and level", () => {
     ],
     gameData: { gameTime: 754.4, gameMode: 'PRACTICETOOL' },
   };
-  assert.deepEqual(liveLine(data), { kills: 7, deaths: 2, assists: 5, cs: 148, gold: 813, level: 11, gameTime: 754, champion: 'Ahri', mode: 'PRACTICETOOL', allies: ['Ahri'], enemies: ['Lux'] });
+  assert.deepEqual(liveLine(data), { kills: 7, deaths: 2, assists: 5, cs: 148, gold: 813, level: 11, gameTime: 754, champion: 'Ahri', mode: 'PRACTICETOOL', allies: ['Ahri'], enemies: ['Lux'], perks: undefined, spells: [] });
   assert.equal(liveLine({ allPlayers: [] }), undefined);
+});
+
+test('liveLine carries the rune page and summoner spells for the in-game view', () => {
+  const data: LolGameData = {
+    activePlayer: {
+      riotIdGameName: 'Me',
+      fullRunes: {
+        generalRunes: [{ id: 8010 }, { id: 9111 }, { id: 9104 }, { id: 8299 }, { id: 8444 }, { id: 8242 }],
+        primaryRuneTree: { id: 8000 },
+        secondaryRuneTree: { id: 8400 },
+        statRunes: [{ id: 5005 }, { id: 5008 }, { id: 5011 }],
+      },
+    },
+    allPlayers: [
+      {
+        riotIdGameName: 'Me',
+        team: 'ORDER',
+        rawChampionName: 'game_character_displayname_Poppy',
+        summonerSpells: {
+          summonerSpellOne: { rawDisplayName: 'GeneratedTip_SummonerSpell_SummonerFlash_DisplayName' },
+          summonerSpellTwo: { rawDisplayName: 'GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName' },
+        },
+      },
+    ],
+    gameData: { gameTime: 30 },
+  };
+  const line = liveLine(data)!;
+  assert.deepEqual(line.perks, { ids: [8010, 9111, 9104, 8299, 8444, 8242, 5005, 5008, 5011], style: 8000, sub: 8400 });
+  assert.deepEqual(line.spells, ['SummonerFlash', 'SummonerTeleport']);
+  assert.equal(line.champion, 'Poppy');
 });
