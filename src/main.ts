@@ -93,8 +93,18 @@ function setOpenAtLogin(on: boolean): void {
 
 // A file named `dev` next to the executable (or `--dev`) points the installed app at the develop stack (dev.trigglow.com)
 // instead of production. It gets its own userData dir, so two installs can run side by side (separate single-instance
-// lock, session, config) without mixing accounts.
-const DEV_STACK = process.argv.includes('--dev') || fs.existsSync(path.join(path.dirname(process.execPath), 'dev'));
+// lock, session, config) without mixing accounts. Admins can also pick the server from the app menu (Server): the pick
+// lives in the production userData dir (server.json) and takes effect on restart.
+const SERVER_FILE = path.join(app.getPath('userData'), 'server.json');
+function readServerPick(): 'prod' | 'dev' {
+  try {
+    return (JSON.parse(fs.readFileSync(SERVER_FILE, 'utf8')) as { server?: string }).server === 'dev' ? 'dev' : 'prod';
+  } catch {
+    return 'prod';
+  }
+}
+const SERVER_PICK = readServerPick();
+const DEV_STACK = process.argv.includes('--dev') || fs.existsSync(path.join(path.dirname(process.execPath), 'dev')) || SERVER_PICK === 'dev';
 if (DEV_STACK) app.setPath('userData', `${app.getPath('userData')}-dev`);
 allowDevStack(DEV_STACK || !app.isPackaged);
 
@@ -458,6 +468,7 @@ async function saveLocaleToAccount(locale: AppLocale) {
 
 /** Reads the account's language; `fromWeb`: right after the web dashboard saved the profile inside this app. */
 async function refreshAccountLocale(fromWeb = false) {
+  void refreshAdmin();
   const run = accountRun;
   let next: AppLocale | null;
   try {
@@ -516,6 +527,8 @@ function showSignIn() {
   accountRun += 1;
   accountLocale = null;
   accountLocaleKnown = false;
+  viewerIsAdmin = false;
+  createMenu();
   applyLocale();
   api.disconnect();
   textSources?.stop();
@@ -1729,7 +1742,45 @@ function refreshTrayMenu() {
   }
 }
 
+/** Signed-in account is a Trigglow admin (the Server menu is theirs). Re-read on start and after sign-in. */
+let viewerIsAdmin = false;
+async function refreshAdmin(): Promise<void> {
+  const r = await apiJson<{ user?: { role?: string }; role?: string }>('/auth/me');
+  const admin = (r.body?.user?.role ?? r.body?.role) === 'admin';
+  if (admin !== viewerIsAdmin) {
+    viewerIsAdmin = admin;
+    createMenu();
+  }
+}
+
+/** Saves the server pick and restarts into it (each server keeps its own session and settings). */
+function pickServer(server: 'prod' | 'dev') {
+  if (server === (DEV_STACK ? 'dev' : 'prod')) return;
+  try {
+    fs.mkdirSync(path.dirname(SERVER_FILE), { recursive: true });
+    fs.writeFileSync(SERVER_FILE, JSON.stringify({ server }));
+  } catch (err) {
+    console.warn('[server] could not save the pick:', err);
+    return;
+  }
+  app.relaunch();
+  app.exit(0);
+}
+
 function createMenu() {
+  // Shown to admins, and always while on development by the menu's pick (so the way back is there before signing in).
+  const serverMenu =
+    viewerIsAdmin || SERVER_PICK === 'dev'
+      ? [
+          {
+            label: nt('menu.server'),
+            submenu: [
+              { label: nt('menu.serverProd'), type: 'radio' as const, checked: !DEV_STACK, click: () => pickServer('prod') },
+              { label: nt('menu.serverDev'), type: 'radio' as const, checked: DEV_STACK, click: () => pickServer('dev') },
+            ],
+          },
+        ]
+      : [];
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
       {
@@ -1737,6 +1788,7 @@ function createMenu() {
         submenu: [
           { label: nt('tray.settings'), accelerator: 'CmdOrCtrl+,', click: openSettings },
           { label: nt('menu.reload'), accelerator: 'CmdOrCtrl+R', click: () => reloadView() },
+          ...serverMenu,
           { label: nt('tray.signout'), click: () => void signOut() },
           ...(app.isPackaged ? [] : [{ role: 'toggleDevTools' as const }]),
           { type: 'separator' },
