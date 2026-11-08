@@ -2796,15 +2796,18 @@ if (!isTrustedUrl(WEB_URL) || !isTrustedUrl(API_ORIGIN) || !isTrustedUrl(UPDATE_
       () => (config.prefs.clipEnabled && config.prefs.gameHighlights ? config.prefs.gameHighlightsDir || DEFAULT_HIGHLIGHTS_DIR : null),
       () => engine().live && !isClipBusy() && void runClip(),
     );
-    // League of Legends events (kills, objectives, result) as stream moments while live.
+    // League of Legends: the live line (KDA, CS, gold) for the game rank overlay whenever signed in, streaming or not
+    // (the in-game view also works while only playing); events (kills, objectives, result) as stream moments only live.
     new LolWatcher(
-      () => config.prefs.lolDetect && engine().live && api.online,
-      (m) => api.sendMoment({ kind: 'game', game: 'lol', detail: m.code, ageMs: m.ageMs, ...(m.stats ? { stats: m.stats } : {}) }),
+      () => config.prefs.lolDetect && api.online,
+      (m) => {
+        if (engine().live) api.sendMoment({ kind: 'game', game: 'lol', detail: m.code, ageMs: m.ageMs, ...(m.stats ? { stats: m.stats } : {}) });
+      },
       (line) => api.sendLolLive(line),
     );
-    // Counter-Strike 2 state (score, KDA, health) pushed by its Game State Integration, forwarded while live.
+    // Counter-Strike 2 state (score, KDA, health) pushed by its Game State Integration, forwarded whenever signed in.
     const cs2 = new Cs2Forwarder(
-      () => config.prefs.cs2Detect && engine().live && api.online,
+      () => config.prefs.cs2Detect && api.online,
       (line) => api.sendCs2Live(line),
     );
     onCs2Gsi = (payload) => cs2.push(payload);
