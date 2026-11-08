@@ -155,10 +155,15 @@ export class ApiLink {
       },
     });
     socket.on('connect', () => {
-      socket.emit('desktop:auth', {}, (ok: boolean) => {
-        this.online = ok;
+      // ack timeout: a server still booting (a deploy) may never answer; a false answer may be transient too.
+      socket.timeout(10_000).emit('desktop:auth', {}, (err: Error | null, ok: boolean) => {
+        this.online = !err && ok === true;
         this.onChange();
-        if (ok) this.onAuthed?.();
+        if (this.online) this.onAuthed?.();
+        // Not signed in on this connection: retry in a while instead of staying offline until the next disconnect.
+        else setTimeout(() => {
+          if (this.socket === socket && socket.connected && !this.online) socket.disconnect().connect();
+        }, 15_000);
       });
     });
     socket.on('disconnect', () => {
