@@ -61,7 +61,8 @@ interface LolPlayer {
   team?: string;
   championName?: string;
   isDead?: boolean;
-  scores?: { kills?: number; deaths?: number; assists?: number };
+  scores?: { kills?: number; deaths?: number; assists?: number; creepScore?: number };
+  level?: number;
 }
 
 /** The parts of /liveclientdata/allgamedata this reads. */
@@ -71,6 +72,8 @@ export interface LolGameData {
     riotId?: string;
     summonerName?: string;
     championStats?: { currentHealth?: number; maxHealth?: number };
+    currentGold?: number;
+    level?: number;
   };
   allPlayers?: LolPlayer[];
   events?: { Events?: LolEvent[] };
@@ -95,6 +98,33 @@ export function myStats(data: LolGameData): LolMatchStats | undefined {
   if (!p?.championName) return undefined;
   return { champion: p.championName, kills: p.scores?.kills ?? 0, deaths: p.scores?.deaths ?? 0, assists: p.scores?.assists ?? 0 };
 }
+
+/** The player's live line for the Trigglow game-rank overlay (KDA, CS, gold, level, game clock). Pure. */
+export interface LolLiveLine {
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  gold: number | null;
+  level: number | null;
+  gameTime: number;
+}
+export function liveLine(data: LolGameData): LolLiveLine | undefined {
+  const p = me(data);
+  if (!p) return undefined;
+  return {
+    kills: p.scores?.kills ?? 0,
+    deaths: p.scores?.deaths ?? 0,
+    assists: p.scores?.assists ?? 0,
+    cs: p.scores?.creepScore ?? 0,
+    gold: typeof data.activePlayer?.currentGold === 'number' ? Math.round(data.activePlayer.currentGold) : null,
+    level: data.activePlayer?.level ?? p.level ?? null,
+    gameTime: Math.round(data.gameData?.gameTime ?? 0),
+  };
+}
+
+/** How often the live line goes to Trigglow (the overlay doesn't need every 2 s poll). */
+const LIVE_LINE_MS = 5000;
 
 /**
  * New moments in a snapshot, each with how many seconds ago it happened. Marks every event it looks at as seen, so a
@@ -219,10 +249,13 @@ export class LolWatcher {
   private seen = new Set<number>();
   private lastGameTime = Infinity;
   private escapes = new EscapeTracker();
+  private lastLiveAt = 0;
 
   constructor(
     private active: () => boolean,
     private report: (m: { code: LolMomentCode; ageMs: number; stats?: LolMatchStats }) => void,
+    /** The live line (KDA, CS, gold) every few seconds in game, for the game-rank overlay. */
+    private live?: (line: LolLiveLine) => void,
   ) {
     void this.loop();
   }
@@ -243,6 +276,11 @@ export class LolWatcher {
         for (const m of lolMoments(data, this.seen)) this.report({ code: m.code, ageMs: Math.round(m.ageSec * 1000), ...(m.stats ? { stats: m.stats } : {}) });
         const escape = this.escapes.step(data);
         if (escape != null) this.report({ code: 'escape', ageMs: Math.round(escape * 1000) });
+        const line = this.live && Date.now() - this.lastLiveAt >= LIVE_LINE_MS ? liveLine(data) : undefined;
+        if (line) {
+          this.lastLiveAt = Date.now();
+          this.live!(line);
+        }
         wait = IN_GAME_POLL_MS;
       } else {
         this.lastGameTime = Infinity;

@@ -14,7 +14,7 @@
     "lint": "tsc --noEmit",
     "dist": "tsc && electron-builder --publish never",
     "dist:dir": "tsc && electron-builder --dir --publish never",
-    "test": "tsc && node --test dist/nav.test.js dist/obs-detect.test.js dist/obs-fix.test.js dist/notify.test.js dist/text-sources.test.js dist/obs-events.test.js dist/hotkey.test.js dist/multipart.test.js dist/obs-fix-ini.test.js dist/overlay-layout.test.js dist/signin-i18n.test.js dist/highlight.test.js dist/lol.test.js dist/now-playing.test.js dist/local-server.test.js dist/locale.test.js dist/pack-open.test.js dist/dock-url.test.js dist/obs-stream.test.js dist/compress.test.js dist/game-highlights.test.js dist/studio.test.js dist/studio-scenes.test.js dist/studio-settings.test.js dist/studio-props.test.js dist/studio-import.test.js",
+    "test": "tsc && node --test dist/nav.test.js dist/obs-detect.test.js dist/obs-fix.test.js dist/notify.test.js dist/text-sources.test.js dist/obs-events.test.js dist/hotkey.test.js dist/multipart.test.js dist/obs-fix-ini.test.js dist/overlay-layout.test.js dist/signin-i18n.test.js dist/highlight.test.js dist/lol.test.js dist/cs2.test.js dist/now-playing.test.js dist/local-server.test.js dist/locale.test.js dist/pack-open.test.js dist/dock-url.test.js dist/obs-stream.test.js dist/compress.test.js dist/game-highlights.test.js dist/studio.test.js dist/studio-scenes.test.js dist/studio-settings.test.js dist/studio-props.test.js dist/studio-import.test.js",
     "studio:fetch": "node scripts/fetch-osn.mjs",
     "studio:delay": "node scripts/install-delay-core.mjs",
     "release": "node scripts/release.mjs"

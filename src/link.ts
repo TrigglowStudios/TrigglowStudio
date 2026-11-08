@@ -3,6 +3,7 @@ import { io, type Socket } from 'socket.io-client';
 import { parseNotification, type DesktopNotification } from './notify';
 import type { EngineLink } from './obs';
 import type { NowPlaying } from './now-playing';
+import type { Cs2Line } from './cs2';
 
 const SESSION_COOKIE = 'trigglow_session';
 
@@ -113,6 +114,15 @@ export class ApiLink {
     stats?: { champion: string; kills: number; deaths: number; assists: number };
   }): void {
     if (this.online) this.socket?.emit('desktop:moment', m);
+  }
+
+  /** KDA, CS and gold of the LoL game in progress, for the Trigglow game-rank overlay. */
+  sendLolLive(line: { kills: number; deaths: number; assists: number; cs: number; gold: number | null; level: number | null; gameTime: number }): void {
+    if (this.online) this.socket?.emit('desktop:lol-live', line);
+  }
+
+  sendCs2Live(line: Cs2Line): void {
+    if (this.online) this.socket?.emit('desktop:cs2-live', line);
   }
 
   emit(ev: { metric: string; scene?: string; input?: string }): void {

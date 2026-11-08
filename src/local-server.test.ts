@@ -15,7 +15,10 @@ const server = new LocalChatServer({
   token: TOKEN,
   port: 0,
   getLocale: () => 'pt-BR',
+  cs2Token: 'gsi-token',
+  onCs2Gsi: (p) => gsi.push(p),
 });
+const gsi: unknown[] = [];
 let port = 0;
 
 before(async () => {
@@ -160,4 +163,15 @@ test('loadOrCreateToken persists a 64-hex token and reuses it', () => {
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('CS2 GSI: only bodies with the right auth.token reach onCs2Gsi', async () => {
+  const post = (body: string) => request({ method: 'POST', path: '/cs2-gsi', headers: { 'Content-Type': 'application/json' }, body });
+  assert.equal((await post(JSON.stringify({ auth: { token: 'nope' } }))).status, 401);
+  assert.equal((await post('{not json')).status, 400);
+  assert.equal(gsi.length, 0);
+  assert.equal((await post(JSON.stringify({ auth: { token: 'gsi-token' }, map: { name: 'de_dust2' } }))).status, 200);
+  assert.deepEqual(gsi, [{ auth: { token: 'gsi-token' }, map: { name: 'de_dust2' } }]);
+  // A browser page can't post here: the Origin check runs first.
+  assert.equal((await request({ method: 'POST', path: '/cs2-gsi', headers: { Origin: 'https://evil.example' }, body: '{}' })).status, 403);
 });

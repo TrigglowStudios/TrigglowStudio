@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { EscapeTracker, lolMoments, type LolGameData } from './lol';
+import { EscapeTracker, liveLine, lolMoments, type LolGameData } from './lol';
 
 const players = [
   { riotIdGameName: 'Streamer', riotId: 'Streamer#EUW', team: 'ORDER' },
@@ -73,4 +73,17 @@ test('an escape: nearly dead, then alive and recovering; dying is not one', () =
   assert.equal(tr.step(snap(120, 80)), null);
   assert.equal(tr.step(snap(122, 0, true)), null); // died: no escape
   assert.equal(tr.step(snap(140, 500)), null);
+});
+
+test("liveLine reads the player's KDA, CS, gold and level", () => {
+  const data: LolGameData = {
+    activePlayer: { riotIdGameName: 'Me', currentGold: 812.6, level: 11 },
+    allPlayers: [
+      { riotIdGameName: 'Other', championName: 'Lux', scores: { kills: 1, deaths: 1, assists: 1, creepScore: 10 } },
+      { riotIdGameName: 'Me', championName: 'Ahri', scores: { kills: 7, deaths: 2, assists: 5, creepScore: 148 } },
+    ],
+    gameData: { gameTime: 754.4 },
+  };
+  assert.deepEqual(liveLine(data), { kills: 7, deaths: 2, assists: 5, cs: 148, gold: 813, level: 11, gameTime: 754 });
+  assert.equal(liveLine({ allPlayers: [] }), undefined);
 });

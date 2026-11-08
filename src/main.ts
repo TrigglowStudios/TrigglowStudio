@@ -25,6 +25,7 @@ import { CLIP_QUALITIES, CLIP_VISIBILITIES, loadConfig, saveConfig, type ClipQua
 import { AutoHighlights } from './auto-highlights';
 import { DEFAULT_HIGHLIGHTS_DIR, GameHighlightWatcher } from './game-highlights';
 import { LolWatcher } from './lol';
+import { Cs2Forwarder, installCs2Gsi } from './cs2';
 import { clipNow, getClipProgress, getDeferredClipCount, isClipBusy, onClipProgress, retryQueuedClips } from './clip';
 import { sendControl } from './control';
 import { watchHeldKeys } from './key-hold';
@@ -172,11 +173,17 @@ const engine = (): EngineLink => (studio.running ? studioLink : obs);
 const api = new ApiLink(engine, () => broadcast());
 const nowPlaying = new NowPlayingWatcher((np) => api.sendNowPlaying(np));
 api.onNowPlayingConfig = (on) => (on ? nowPlaying.start() : nowPlaying.stop());
+// CS2 Game State Integration pushes here; set once the API link exists (the forwarder needs `api`).
+let onCs2Gsi: (payload: unknown) => void = () => {};
+// Persisted like the dock token: it is written into CS2's gamestate_integration_trigglow.cfg.
+const CS2_GSI_TOKEN = loadOrCreateToken(path.join(app.getPath('userData'), 'cs2-gsi-token'));
 const localChatServer = new LocalChatServer({
   assetsDir: ASSETS,
   // Persisted so the clip toast URL pasted into OBS survives restarts; delete the file to rotate it.
   token: loadOrCreateToken(path.join(app.getPath('userData'), 'local-dock-token')),
   getLocale: appLocale,
+  cs2Token: CS2_GSI_TOKEN,
+  onCs2Gsi: (payload) => onCs2Gsi(payload),
 });
 const signIn = new SignIn(
   API_ORIGIN,
@@ -346,6 +353,7 @@ function state() {
       closeToTray: config.prefs.closeToTray,
       openObsOnLaunch: config.prefs.openObsOnLaunch,
       lolDetect: config.prefs.lolDetect,
+      cs2Detect: config.prefs.cs2Detect,
       openAtLogin: openAtLogin(),
       autoStartSupported: app.isPackaged,
     },
@@ -2553,7 +2561,7 @@ function registerIpc() {
     }
   });
 
-  ipcMain.handle('shell:set-prefs', async (e, p: { engine?: unknown; closeToTray?: unknown; openObsOnLaunch?: unknown; lolDetect?: unknown; openAtLogin?: unknown; clipEnabled?: unknown; clipHotkey?: unknown; clipSeconds?: unknown; controlHotkeys?: unknown; autoUpdate?: unknown; autoHighlights?: unknown; clipUploadMode?: unknown; clipQuality?: unknown; clipVisibility?: unknown; clipTitle?: unknown; clipAnnounce?: unknown; clipAnnounceText?: unknown; gameHighlights?: unknown; gameHighlightsDir?: unknown }) => {
+  ipcMain.handle('shell:set-prefs', async (e, p: { engine?: unknown; closeToTray?: unknown; openObsOnLaunch?: unknown; lolDetect?: unknown; cs2Detect?: unknown; openAtLogin?: unknown; clipEnabled?: unknown; clipHotkey?: unknown; clipSeconds?: unknown; controlHotkeys?: unknown; autoUpdate?: unknown; autoHighlights?: unknown; clipUploadMode?: unknown; clipQuality?: unknown; clipVisibility?: unknown; clipTitle?: unknown; clipAnnounce?: unknown; clipAnnounceText?: unknown; gameHighlights?: unknown; gameHighlightsDir?: unknown }) => {
     local(e);
     const clipPrefs: Partial<Prefs> = {};
     if (CLIP_QUALITIES.includes(p.clipQuality as ClipQuality)) clipPrefs.clipQuality = p.clipQuality as ClipQuality;
@@ -2621,6 +2629,10 @@ function registerIpc() {
       config = { ...config, prefs: { ...config.prefs, lolDetect: p.lolDetect } };
       saveConfig(config);
     }
+    if (typeof p.cs2Detect === 'boolean') {
+      config = { ...config, prefs: { ...config.prefs, cs2Detect: p.cs2Detect } };
+      saveConfig(config);
+    }
     if (typeof p.openAtLogin === 'boolean' && app.isPackaged) {
       setOpenAtLogin(p.openAtLogin);
     }
@@ -2667,7 +2679,8 @@ if (!isTrustedUrl(WEB_URL) || !isTrustedUrl(API_ORIGIN) || !isTrustedUrl(UPDATE_
       permission === 'fullscreen' || permission === 'clipboard-sanitized-write' || isTrustedUrl(origin) || origin.startsWith('trigglow-app://');
     session.defaultSession.setPermissionRequestHandler((_wc, permission, done, details) => done(permitted(permission, details.requestingUrl)));
     session.defaultSession.setPermissionCheckHandler((_wc, permission, origin) => permitted(permission, origin));
-    await localChatServer.start();
+    const localPort = await localChatServer.start();
+    if (config.prefs.cs2Detect && localPort) void installCs2Gsi(localPort, CS2_GSI_TOKEN);
     protocol.handle('trigglow-app', (req) => {
       const file = path.normalize(path.join(ASSETS, decodeURIComponent(new URL(req.url).pathname)));
       if (!file.startsWith(ASSETS + path.sep)) return new Response('forbidden', { status: 403 });
@@ -2734,7 +2747,14 @@ if (!isTrustedUrl(WEB_URL) || !isTrustedUrl(API_ORIGIN) || !isTrustedUrl(UPDATE_
     new LolWatcher(
       () => config.prefs.lolDetect && engine().live && api.online,
       (m) => api.sendMoment({ kind: 'game', game: 'lol', detail: m.code, ageMs: m.ageMs, ...(m.stats ? { stats: m.stats } : {}) }),
+      (line) => api.sendLolLive(line),
     );
+    // Counter-Strike 2 state (score, KDA, health) pushed by its Game State Integration, forwarded while live.
+    const cs2 = new Cs2Forwarder(
+      () => config.prefs.cs2Detect && engine().live && api.online,
+      (line) => api.sendCs2Live(line),
+    );
+    onCs2Gsi = (payload) => cs2.push(payload);
     onClipProgress(() => {
       broadcast();
       const { phase, title } = getClipProgress();

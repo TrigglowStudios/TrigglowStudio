@@ -33,6 +33,8 @@ export interface Prefs extends LocalePrefs {
   autoHighlights: 'off' | 'low' | 'medium' | 'high';
   /** Read League of Legends' local Live Client Data API while live and send kills/objectives/results as stream moments. */
   lolDetect: boolean;
+  /** Install CS2's Game State Integration cfg and forward the streamer's CS2 state (score, KDA, health) while live. */
+  cs2Detect: boolean;
   /** Check for and download app updates in the background (a manual check always works). */
   autoUpdate: boolean;
   /**
@@ -118,7 +120,7 @@ const validWindow = (w: Config['window']) =>
 const file = () => path.join(app.getPath('userData'), 'config.json');
 
 const DEFAULT_PROFILES: StudioProfiles = { current: 'main', list: [{ id: 'main', name: '' }] };
-const DEFAULT: Config = { obs: { mode: 'auto', host: '127.0.0.1', port: 4455 }, prefs: { closeToTray: process.platform !== 'linux' /* stock GNOME has no tray: closing would "lose" the app */, openObsOnLaunch: false, clipEnabled: true, clipHotkey: 'CommandOrControl+Alt+C', clipSeconds: null, controlHotkeys: {}, autoHighlights: 'off', lolDetect: true, autoUpdate: true, clipUploadMode: 'now', clipQuality: 'source', clipVisibility: 'private', clipTitle: CLIP_TITLE_DEFAULT, clipAnnounce: true, clipAnnounceText: '', gameHighlights: true, gameHighlightsDir: '', engine: 'obs', studioAccess: false, locale: null, localePending: false }, onboarded: false, textSources: [], studio: defaultStudioSettings(''), studioKeys: [], studioProfiles: DEFAULT_PROFILES };
+const DEFAULT: Config = { obs: { mode: 'auto', host: '127.0.0.1', port: 4455 }, prefs: { closeToTray: process.platform !== 'linux' /* stock GNOME has no tray: closing would "lose" the app */, openObsOnLaunch: false, clipEnabled: true, clipHotkey: 'CommandOrControl+Alt+C', clipSeconds: null, controlHotkeys: {}, autoHighlights: 'off', lolDetect: true, cs2Detect: true, autoUpdate: true, clipUploadMode: 'now', clipQuality: 'source', clipVisibility: 'private', clipTitle: CLIP_TITLE_DEFAULT, clipAnnounce: true, clipAnnounceText: '', gameHighlights: true, gameHighlightsDir: '', engine: 'obs', studioAccess: false, locale: null, localePending: false }, onboarded: false, textSources: [], studio: defaultStudioSettings(''), studioKeys: [], studioProfiles: DEFAULT_PROFILES };
 
 /** The manual OBS WebSocket password is encrypted with the OS keychain (safeStorage) when available. */
 export function loadConfig(): Config {
@@ -152,6 +154,7 @@ export function loadConfig(): Config {
         controlHotkeys: normalizeControlHotkeys(raw.prefs?.controlHotkeys),
         autoHighlights: raw.prefs?.autoHighlights === 'low' || raw.prefs?.autoHighlights === 'medium' || raw.prefs?.autoHighlights === 'high' ? raw.prefs.autoHighlights : 'off',
         lolDetect: raw.prefs?.lolDetect !== false,
+        cs2Detect: raw.prefs?.cs2Detect !== false,
         autoUpdate: raw.prefs?.autoUpdate !== false,
         clipUploadMode: raw.prefs?.clipUploadMode === 'after_stream' ? 'after_stream' : 'now',
         clipQuality: pick(CLIP_QUALITIES, raw.prefs?.clipQuality, 'source'),

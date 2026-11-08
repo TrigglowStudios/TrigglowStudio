@@ -14,7 +14,12 @@ interface LocalServerOptions {
   port?: number;
   /** The app's language, for the clip toast's strings and the moved-dock notice (GET /api/locale). Default 'en'. */
   getLocale?: () => string;
+  /** Counter-Strike 2 Game State Integration: POST /cs2-gsi bodies whose auth.token matches go to onCs2Gsi. */
+  cs2Token?: string;
+  onCs2Gsi?: (payload: unknown) => void;
 }
+
+const GSI_MAX_BYTES = 256 * 1024;
 
 /** Shown where the old local chat dock lived (OBS docks pasted before /app/docks): where to get the new one. */
 const DOCK_MOVED: Record<string, string> = {
@@ -188,6 +193,11 @@ export class LocalChatServer {
     const parsedUrl = new URL(req.url ?? '/', `http://${host}`);
     const pathname = parsedUrl.pathname;
 
+    if (pathname === '/cs2-gsi' && req.method === 'POST') {
+      this.handleCs2Gsi(req, res);
+      return;
+    }
+
     if (pathname.startsWith('/api/')) {
       const isStream = pathname === '/api/stream' && req.method === 'GET';
       if (!this.hasToken(req, parsedUrl, isStream)) {
@@ -261,6 +271,35 @@ export class LocalChatServer {
 
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found');
+  }
+
+  /** CS2 posts its state here (gamestate_integration_trigglow.cfg); its token sits in the body, not a header. */
+  private handleCs2Gsi(req: http.IncomingMessage, res: http.ServerResponse) {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    req.on('data', (c: Buffer) => {
+      size += c.length;
+      if (size > GSI_MAX_BYTES) {
+        this.deny(res, 413, 'too_large');
+        req.destroy();
+      } else chunks.push(c);
+    });
+    req.on('end', () => {
+      if (size > GSI_MAX_BYTES) return;
+      let body: unknown;
+      try {
+        body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      } catch {
+        return this.deny(res, 400, 'bad_json');
+      }
+      const token = (body as { auth?: { token?: unknown } } | null)?.auth?.token;
+      if (!this.opts.cs2Token || !this.opts.onCs2Gsi || typeof token !== 'string' || !safeEqual(token, this.opts.cs2Token)) {
+        return this.deny(res, 401, 'unauthorized');
+      }
+      res.writeHead(200);
+      res.end();
+      this.opts.onCs2Gsi(body);
+    });
   }
 
   stop() {
