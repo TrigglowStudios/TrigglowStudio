@@ -60,6 +60,8 @@ interface LolPlayer {
   riotId?: string;
   team?: string;
   championName?: string;
+  /** "game_character_displayname_MissFortune": the Data Dragon id after the prefix. */
+  rawChampionName?: string;
   isDead?: boolean;
   scores?: { kills?: number; deaths?: number; assists?: number; creepScore?: number };
   level?: number;
@@ -77,7 +79,7 @@ export interface LolGameData {
   };
   allPlayers?: LolPlayer[];
   events?: { Events?: LolEvent[] };
-  gameData?: { gameTime?: number };
+  gameData?: { gameTime?: number; gameMode?: string };
 }
 
 /** An event older than this (seconds of game time) is history, not something to report now. */
@@ -108,7 +110,18 @@ export interface LolLiveLine {
   gold: number | null;
   level: number | null;
   gameTime: number;
+  /** Data Dragon ids: the server builds the in-game view from these when Riot's spectator has no game (Practice Tool). */
+  champion?: string;
+  mode?: string;
+  allies?: string[];
+  enemies?: string[];
 }
+
+const champId = (p: LolPlayer | undefined) => {
+  const id = (p?.rawChampionName ?? '').replace(/^game_character_displayname_/, '');
+  return /^[A-Za-z0-9]{1,30}$/.test(id) ? id : undefined;
+};
+
 export function liveLine(data: LolGameData): LolLiveLine | undefined {
   const p = me(data);
   if (!p) return undefined;
@@ -120,6 +133,10 @@ export function liveLine(data: LolGameData): LolLiveLine | undefined {
     gold: typeof data.activePlayer?.currentGold === 'number' ? Math.round(data.activePlayer.currentGold) : null,
     level: data.activePlayer?.level ?? p.level ?? null,
     gameTime: Math.round(data.gameData?.gameTime ?? 0),
+    champion: champId(p),
+    mode: data.gameData?.gameMode?.slice(0, 20),
+    allies: (data.allPlayers ?? []).filter((x) => x.team === p.team).map(champId).filter((c): c is string => Boolean(c)).slice(0, 5),
+    enemies: (data.allPlayers ?? []).filter((x) => x.team && x.team !== p.team).map(champId).filter((c): c is string => Boolean(c)).slice(0, 5),
   };
 }
 

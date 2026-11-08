@@ -79,11 +79,11 @@ test("liveLine reads the player's KDA, CS, gold and level", () => {
   const data: LolGameData = {
     activePlayer: { riotIdGameName: 'Me', currentGold: 812.6, level: 11 },
     allPlayers: [
-      { riotIdGameName: 'Other', championName: 'Lux', scores: { kills: 1, deaths: 1, assists: 1, creepScore: 10 } },
-      { riotIdGameName: 'Me', championName: 'Ahri', scores: { kills: 7, deaths: 2, assists: 5, creepScore: 148 } },
+      { riotIdGameName: 'Other', team: 'CHAOS', championName: 'Lux', rawChampionName: 'game_character_displayname_Lux', scores: { kills: 1, deaths: 1, assists: 1, creepScore: 10 } },
+      { riotIdGameName: 'Me', team: 'ORDER', championName: 'Ahri', rawChampionName: 'game_character_displayname_Ahri', scores: { kills: 7, deaths: 2, assists: 5, creepScore: 148 } },
     ],
-    gameData: { gameTime: 754.4 },
+    gameData: { gameTime: 754.4, gameMode: 'PRACTICETOOL' },
   };
-  assert.deepEqual(liveLine(data), { kills: 7, deaths: 2, assists: 5, cs: 148, gold: 813, level: 11, gameTime: 754 });
+  assert.deepEqual(liveLine(data), { kills: 7, deaths: 2, assists: 5, cs: 148, gold: 813, level: 11, gameTime: 754, champion: 'Ahri', mode: 'PRACTICETOOL', allies: ['Ahri'], enemies: ['Lux'] });
   assert.equal(liveLine({ allPlayers: [] }), undefined);
 });

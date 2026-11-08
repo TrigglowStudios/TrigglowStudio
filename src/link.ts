@@ -117,7 +117,7 @@ export class ApiLink {
   }
 
   /** KDA, CS and gold of the LoL game in progress, for the Trigglow game-rank overlay. */
-  sendLolLive(line: { kills: number; deaths: number; assists: number; cs: number; gold: number | null; level: number | null; gameTime: number }): void {
+  sendLolLive(line: import('./lol').LolLiveLine): void {
     if (this.online) this.socket?.emit('desktop:lol-live', line);
   }
 
