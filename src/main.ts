@@ -2732,7 +2732,6 @@ if (!isTrustedUrl(WEB_URL) || !isTrustedUrl(API_ORIGIN) || !isTrustedUrl(UPDATE_
     session.defaultSession.setPermissionRequestHandler((_wc, permission, done, details) => done(permitted(permission, details.requestingUrl)));
     session.defaultSession.setPermissionCheckHandler((_wc, permission, origin) => permitted(permission, origin));
     const localPort = await localChatServer.start();
-    if (config.prefs.cs2Detect && localPort) void installCs2Gsi(localPort, CS2_GSI_TOKEN);
     protocol.handle('trigglow-app', (req) => {
       const file = path.normalize(path.join(ASSETS, decodeURIComponent(new URL(req.url).pathname)));
       if (!file.startsWith(ASSETS + path.sep)) return new Response('forbidden', { status: 403 });
@@ -2744,6 +2743,8 @@ if (!isTrustedUrl(WEB_URL) || !isTrustedUrl(API_ORIGIN) || !isTrustedUrl(UPDATE_
       });
     });
     config = loadConfig();
+    // After the config: CS2's Game State Integration file points CS2 at the local server (only with the setting on).
+    if (config.prefs.cs2Detect && localPort) void installCs2Gsi(localPort, CS2_GSI_TOKEN);
     setLocaleSources({ prefs: config.prefs });
     shownLocale = appLocale();
     // The web dashboard saves a language pick to the account (PATCH /api/profile): inside this app that is the user
