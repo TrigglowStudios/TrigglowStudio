@@ -4,6 +4,14 @@ All notable changes to the Trigglow Studio desktop app are documented in this fi
 
 ## [Unreleased]
 
+### Added
+- Counter-Strike 2: the app sets up CS2's Game State Integration on its own and sends the live match (score, your weapon, KDA, MVPs, health, money, ACEs) to the game rank overlay. Restart CS2 once after updating.
+- While you play League of Legends, the app sends your live KDA, CS, gold, champions, runes and summoner spells to the game rank overlay, so the box shows them as the game goes.
+- Song requests on Spotify without a Spotify app or account link (beta): pick "With Trigglow Studio" in Song requests and the app opens each request in Spotify on your PC, one after another. Viewers request with Spotify links.
+
+### Fixed
+- After a Trigglow server restart, the app signs in again on its own instead of staying offline until you restart it.
+
 ## [0.10.0] - 2026-11-02
 
 ### Changed
