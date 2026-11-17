@@ -4,6 +4,8 @@ All notable changes to the Trigglow Studio desktop app are documented in this fi
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-17
+
 ### Added
 - Counter-Strike 2: the app sets up CS2's Game State Integration on its own and sends the live match (score, your weapon, KDA, MVPs, health, money, ACEs) to the game rank overlay. Restart CS2 once after updating.
 - While you play League of Legends, the app sends your live KDA, CS, gold, champions, runes and summoner spells to the game rank overlay, so the box shows them as the game goes.
