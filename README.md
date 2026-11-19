@@ -28,13 +28,15 @@ The only web-side traces are driven by the `TrigglowDesktop/x.y` User-Agent suff
 
 No extra window. The web's Settings page gets a **Desktop app** tab whose content is an `<iframe>` of `trigglow-app://app/settings.html` — a private scheme the shell serves from its bundled `assets/` (an http page can't frame `file://`). The panel, its logic and its strings ship with the app, so the web needs no knowledge of OBS or tray options and stays deploy-independent. The shell's preload exposes `trigglowShell` only to pages on that scheme, and IPC calls from a framed panel also require a trusted parent page. Tray → *Settings* (and Ctrl+,) just navigate the window to `/app/settings?tab=desktop`.
 
-## Sign-in
+## Sign-in & platform linking
 
-No credentials or OAuth ever touch the app window. It reuses the API's existing device-link flow (`/auth/plugin/start|approve|poll`, same as the Stream Deck plugin):
+No credentials or OAuth ever touch the app window. It reuses the API's device-link flow (`/auth/plugin/start`, `/auth/plugin/approve`, `/auth/plugin/token`, plus `/auth/plugin/poll` fallback):
 
 1. **Sign in** → app opens the system browser at `/plugin/link?code=…`.
 2. User signs in however they like (Kick, Twitch, password + 2FA) and confirms the link.
-3. The app polls, receives a session token and stores it as the `trigglow_session` cookie in its own Electron session, then loads `/app`.
+3. The app receives the session token and stores it as the `trigglow_session` cookie in its own Electron session, then loads `/app`.
+
+Platform account links (Twitch, Kick, YouTube, Discord, Spotify) also open in the user's regular system browser using a one-time desktop ticket (`/auth/desktop-link`) and show the result in the app as soon as you return.
 
 Sign-out (tray / menu / settings) calls `/auth/logout`, drops the cookie and returns to the sign-in screen. If the web itself routes to `/login` (logout button, expired session) the shell shows its sign-in screen instead.
 
@@ -65,13 +67,20 @@ The desktop app also listens to OBS and reports what happens (`src/obs-events.ts
 
 New DO actions, executed locally through the OBS link: start/stop recording or streaming, save replay, mute/unmute an input, set an input volume, set a text source, trigger an OBS hotkey by name, enable/disable a source filter (besides the existing scene switch and show/hide source). Extra WHEN events: stream reconnecting, input muted / unmuted (optional input-name filter).
 
-## Instant clip
+## Instant clip, GPU compression & highlights
 
-A global shortcut (default Ctrl+Alt+C, configurable and recorded in Settings → Desktop app → Instant clip; also in the tray menu) saves OBS's **Replay Buffer** and uploads it as a Trigglow clip:
+A global shortcut (default `Ctrl+Alt+C`, configurable and recorded in Settings → Desktop app → Instant clip; also in the tray menu) saves OBS's **Replay Buffer** (or Trigglow Studio's engine replay) and uploads it as a Trigglow clip:
 
 1. `SaveReplayBuffer` and wait for OBS's `ReplayBufferSaved` event (the file path);
-2. multipart upload to the existing `POST /api/kick/clips/upload` (Node `fetch` with the session cookie). The server now also accepts mkv/flv/ts — what OBS typically writes — converts them to MP4 (`-c copy`) and measures the length with ffmpeg (`lib/clip-remux.ts`), so no duration is needed from the client;
-3. native notifications for each step (click the final one to open your clips). The replay file stays where OBS wrote it.
+2. If the recording is already browser-playable (H.264 + AAC or silent) and within the plan's byte cap and optional max height (keeping 1440p/4K at full frame rate, or capped to 1080p/720p in Settings), it uploads untouched (`src/compress.ts`). Otherwise it re-encodes with your GPU's hardware encoder (`h264_nvenc`, `h264_amf`, `h264_qsv`) or `libx264` on half your CPU cores at below-normal priority;
+3. Multipart upload to `POST /api/kick/clips/upload` (Node `fetch` with the session cookie). The server converts mkv/flv/ts to MP4 (`-c copy`) and measures the length with ffmpeg, so no duration is needed from the client;
+4. Native notifications for each step (click the final one to open your clips) plus SSE updates for the **OBS Clip Toast** browser source served on `http://127.0.0.1:45455` (protected by a persisted `local-dock-token`, `src/local-server.ts`). The original replay file stays where OBS wrote it.
+
+Additional clip capabilities:
+- **Upload timing & retry queue:** upload immediately or queue clips on disk (`clipUploadMode: 'after_stream'`) to upload once the stream ends or OBS closes, with automatic retry if offline.
+- **Visibility, title & chat post:** choose `private`, `unlisted` or `public`, format titles with `{game}` and `{date}`, and customize or disable TrigglowBot's `{link}` chat announcement (announced clips are promoted to at least `unlisted`).
+- **Automatic highlights (`src/auto-highlights.ts`, `src/highlight.ts`):** while live, watches OBS audio meters and 64×36 frame motion (`Off` / `Only big moments` / `Balanced` / `Catch more`) and triggers instant clips automatically (at most once per minute).
+- **NVIDIA Highlights (`src/game-highlights.ts`):** watches your Highlights folder (Fortnite and other supported games) while live and triggers OBS's Replay Buffer the moment a game saves a kill or win so the clip includes your camera and overlays.
 
 The Replay Buffer is set up automatically, same philosophy as the WebSocket: once OBS connects the app **starts it by itself** if it is enabled but idle; if it isn't enabled, "Turn it on for me" enables it in the active OBS profile (`basic.ini`, Simple or Advanced mode, keeping the user's buffer length) — directly when OBS is closed (and launches it with `--startreplaybuffer`), or with a confirmed restart when it is open. When the WebSocket fix has to restart OBS anyway, the Replay Buffer is enabled in the same pass.
 
@@ -79,40 +88,44 @@ The Replay Buffer is set up automatically, same philosophy as the WebSocket: onc
 
 The length is OBS's own Replay Buffer length, set from Settings → Desktop app → Instant clip (slider, 10 s up to the plan's limit). While OBS is connected it is applied **live** through the WebSocket (`SetProfileParameter` on the active output mode; the buffer is stopped and started again because OBS reads the length when it starts, so what it had recorded is discarded) — with OBS closed it is written to the profile's `basic.ini`; with OBS open but not connected nothing is touched. The memory cap OBS keeps for the buffer (`RecRBSize`) is raised when a long length wouldn't fit under it, never lowered. Until the user picks a length the app shows and keeps OBS's own.
 
-One rule for every way a clip enters the library — **up to 60 s for everyone, up to 5 min with Plus** (`CLIP_FREE_MAX_SECONDS` / `CLIP_PLUS_MAX_SECONDS` in `@trigglow/shared`, enforced by `lib/clip-limits.ts` on the upload endpoint and on native-clip imports, and surfaced by `GET /api/kick/clips/limits`). Kick live capture (30 s, bounded by Kick's HLS window) and Twitch clips (60 s) already sit under the free limit. A replay file runs a few seconds over the configured length (it ends on a keyframe), so the server allows `CLIP_DURATION_GRACE_SECONDS` (8 s) of slack. The web's upload dialog checks the video's length *before* sending it; the desktop slider stops at the plan's limit.
+One rule for every way a clip enters the library — **up to 60 s on Free, up to 5 min (300 s) on Starter, and up to 15 min (900 s) on Pro (`plus`)** (`CLIP_FREE_MAX_SECONDS` / `CLIP_STARTER_MAX_SECONDS` / `CLIP_PLUS_MAX_SECONDS` in `@trigglow/shared`, enforced by `lib/clip-limits.ts` on the upload endpoint and on native-clip imports, and surfaced by `GET /api/kick/clips/limits`). Kick live capture (30 s, bounded by Kick's HLS window) and Twitch clips (60 s) already sit under the free limit. A replay file runs a few seconds over the configured length (it ends on a keyframe), so the server allows `CLIP_DURATION_GRACE_SECONDS` (8 s) of slack. The web's upload dialog checks the video's length *before* sending it; the desktop slider stops at the plan's limit.
 
 ### Stream Deck "Create clip"
 
-The key calls `GET /api/overlay/:slug/control?action=create-clip`. The API now serves it like this (no plugin update needed for the automatic mode):
+The key calls `GET /api/overlay/:slug/control?action=create-clip`. The API serves it like this:
 
 1. `platform=obs` forces the desktop app's replay clip (409 `desktop_not_connected` if it isn't running);
 2. with no platform, the replay clip is used when a connected desktop app has reported OBS's Replay Buffer as ready (`desktop:caps`) — the key answers 202 straight away and the app uploads in the background, posts native notifications and TrigglowBot announces the link in chat once the clip is up (`announce` field on the upload);
 3. otherwise — and for `platform=kick|twitch` — the previous behaviour (live capture / Twitch clip).
 
-The plugin's Property Inspector has a new *OBS replay (Trigglow desktop app)* option; it needs a repack of the plugin to appear, the automatic routing works with the current one.
-
 ## OBS connection: automatic
 
 Nothing to type. Before **every** connection attempt the app reads OBS's own settings (`src/obs-detect.ts`):
 
-- `<OBS config dir>/plugin_config/obs-websocket/config.json` → port, whether the WebSocket server is enabled, and the password if OBS requires one (read on demand, never stored or logged);
+- `<OBS config dir>/plugin_config/obs-websocket/config.json` → port, whether the WebSocket server is enabled, and the password if OBS requires one (read on demand, never stored or logged). On Linux it detects native (`~/.config/obs-studio`), **Flatpak** (`~/.var/app/com.obsproject.Studio/config/obs-studio`), and **Snap** (`~/snap/obs-studio/current/.config/obs-studio`) OBS installations;
 - whether the OBS process is running (`tasklist` / `pgrep`).
 
 Re-reading each attempt means it just works when the user opens OBS, enables the server or changes the password later. The diagnosis is reduced to one actionable hint (`connected`, `not_running`, `server_disabled`, `auth_failed`, `unreachable`) that the onboarding, the settings panel and the "Install in OBS" panels all show. **Manual** host/port/password remains an opt-in fallback (Settings → Desktop app).
+
+On Linux, global shortcuts work on Wayland through the `GlobalShortcutsPortal` (KDE, GNOME 48+), and "Start at login" creates/updates an XDG autostart entry (`~/.config/autostart/trigglow.desktop`).
 
 ### "Fix it for me"
 
 When the hint is actionable the app offers the fix (automatic mode only):
 
-- **OBS closed** → turns the WebSocket server on (`server_enabled: true` in obs-websocket's `config.json`; a missing file becomes a secure default with a random password we read back ourselves) and **launches OBS**. Windows finds the exe from the running process, the installer's registry key or the default folders.
-- **OBS open, server off** → OBS only reads that file at startup and rewrites it on exit, so this needs a **restart**. It only happens after an explicit confirmation ("don't do it while streaming or recording"): graceful close (`taskkill` without `/F`, `osascript quit`, `pkill -TERM`), wait up to 30 s — if OBS doesn't exit (e.g. it is streaming and asks) nothing is touched — edit the file, relaunch.
+- **OBS closed** → turns the WebSocket server on (`server_enabled: true` in obs-websocket's `config.json`; a missing file becomes a secure default with a random password we read back ourselves) and **launches OBS** (Windows exe lookup via process/registry/default paths; Flatpak/Snap on Linux).
+- **OBS open, server off** → OBS only reads that file at startup and rewrites it on exit, so this needs a **restart**. It only happens after an explicit confirmation ("don't do it while streaming or recording"): graceful close (`taskkill` without `/F`, `osascript quit`, `pkill -TERM`), wait up to 30 s — if OBS doesn't exit (e.g. it is streaming and asks) nothing is touched — edit the file atomically (`.trigglow-tmp` + `.trigglow-bak`), relaunch.
 - There is no way to flip the setting inside a running OBS (the `--websocket_port/--websocket_password` flags only override port and password), hence the confirmation. The manual steps stay available under "Prefer to do it yourself?".
 
-Not covered yet: Linux Flatpak OBS (different config folder), OBS run as administrator.
+Not covered yet: OBS run as administrator on Windows.
+
+## One-click OBS docks
+
+From `/app/docks`, Trigglow Studio writes both the **Activity** (`/dock/activity`) and **Chat** (`/dock/chat`) docks directly into OBS's `user.ini` using one-use desktop tickets (`#e=tgde_…`) and atomic config replacement (`src/obs-fix.ts`). Existing docks of the same kind are preserved without duplicating, and legacy secret-URL (`#k=`) docks are migrated cleanly when matched.
 
 ## First-run setup
 
-`assets/onboarding.html` is shown once (and again from Settings → *Run setup again*): welcome → sign in (same device flow) → connect OBS (live checklist: OBS found / open / WebSocket on / connected, with the exact steps when the server is off) → install overlays (the six overlays are built from the signed-in account and added to a chosen scene as browser sources, idempotently) → done. Every step except sign-in/OBS is skippable and nothing forces the user through it twice.
+`assets/onboarding.html` is shown once (and again from Settings → *Run setup again*): welcome → sign in (same device flow) → connect OBS (live checklist: OBS found / open / WebSocket on / connected, with the exact steps when the server is off) → install overlays (the ten overlays are built from the signed-in account and added to a chosen scene as browser sources, idempotently) → done. Every step except sign-in/OBS is skippable and nothing forces the user through it twice.
 
 ## Notifications (web **and** desktop)
 
@@ -133,9 +146,9 @@ event (ingest worker · advanceProgress for donations · createVipRequest · sta
 
 Text is rendered once on the server in the user's language (`lib/notification-copy.ts`; the five stream events reuse the branded email copy, the new kinds have es/en), so the bell, web push and the desktop app say the same thing. Defaults: email and push are opt-in; the bell is on for everything except follows and redeems (the chattiest); the desktop app starts on for subs, gift subs, donations, VIP requests and support replies. The desktop app re-validates every payload (`notify.ts`: bounded text, click target must be `/app/…`) and shows at most 4 toasts per 10 s — a raid becomes one "N more notifications" summary. Donations funnel through `advanceProgress` and are de-duplicated by the payment's idempotency key (the Stripe webhook and the success page can both report it).
 
-## Overlay hotkeys
+## Overlay & song-request hotkeys
 
-Global shortcuts (Settings → Desktop app → Overlay hotkeys, recorded in the panel) for skip / mute / pause / clear / repeat. They call the same endpoint the dashboard uses — `POST /api/overlay/:slug/control {action}` with the session cookie — so they work over any game and need no Stream Deck. None is set by default (a wrong default would steal a key from the user's other apps); a shortcut another app already owns is reported instead of silently failing. A failed call shows one notification per 30 s.
+Global shortcuts (Settings → Desktop app → Overlay hotkeys, recorded in the panel) for **Alerts** (`skip`, `toggle-mute`, `toggle-pause`, `clear`, `repeat`) and **Song requests** (`music-skip`, `music-toggle-pause`, `music-volume-up`, `music-volume-down`, `music-clear`, `music-toggle-requests`). They call the same endpoint the dashboard uses — `POST /api/overlay/:slug/control {action}` with the session cookie — so they work over any game and need no Stream Deck. None is set by default (a wrong default would steal a key from the user's other apps); a shortcut another app already owns is reported instead of silently failing. A failed call shows one notification per 30 s.
 
 ## OBS text sources
 
@@ -143,16 +156,39 @@ Trigglow data written straight into OBS **text sources** — no browser source, 
 
 Data comes from endpoints the dashboard already uses — `/api/activity` (latest follower/sub/donation) and the public `/api/overlay/:slug/widgets` snapshot (quests & goals). It refreshes on a server nudge (`desktop:data`, sent for every event that can change it, whatever the notification settings), when OBS connects, and every 60 s; bursts collapse into one fetch (min 3 s apart, well under the widgets endpoint's rate limit).
 
+## Live game integrations (LoL & CS2)
+
+When signed in, the app feeds live match data to Trigglow's **game-rank overlay** and post-stream highlights:
+
+- **League of Legends (`src/lol.ts`):** polls Riot's official local Live Client Data API (`https://127.0.0.1:2999/liveclientdata/allgamedata`, toggleable in Settings → General → *Games*). Reports match events (`game_start`, kills, multikills, first blood, aces, dragon/herald/baron kills and steals, inhibitors, turrets, close escapes, victory/defeat) via `desktop:moment`, and sends live KDA, CS, gold, level, champion, mode, runes and summoner spells to the game-rank overlay.
+- **Counter-Strike 2 (`src/cs2.ts`):** automatically installs `gamestate_integration_trigglow.cfg` in CS2's Steam library and receives GSI POSTs at `POST /cs2-gsi` on the local server, forwarding live map, round, team scores, weapon, KDA, MVPs, health, money and ACEs to the game-rank overlay.
+
+## Music: Now playing & Spotify song requests
+
+- **Now playing (`src/now-playing.ts`):** reads the currently playing track on **Windows** (SMTC via PowerShell) and **Linux** (MPRIS via `playerctl`, preferring Spotify; artwork read only from safe player cache/temp paths or known art CDNs with redirects refused) and pushes it to the music overlay without needing a Spotify app connection.
+- **Spotify song requests without a Spotify app (beta, `src/link.ts`):** when *"With Trigglow Studio"* is selected in Song requests, the API emits `desktop:spotify-play` for each viewer request and the app opens `spotify:track:<id>#0:01` directly in your local Spotify client.
+
+## Trigglow Studio broadcasting editor
+
+Trigglow Studio includes an embedded broadcasting editor (`src/studio.ts`, `src/studio-scenes.ts`, `src/studio-settings.ts`, `src/studio-props.ts`) running `libobs` via `obs-studio-node` (Windows only; see `licenses/NOTICE.md`). It supports scenes, folders, sources, audio mixer, streaming/recording, non-destructive scene collection imports from **OBS Studio** and **Streamlabs Desktop** (`src/studio-import.ts`), a Discord streamer mode binary toggle (`obs64.exe` vs `trigglow-engine.exe`), and the **Trigglow Dynamic Delay** core (`pnpm studio:fetch` / `pnpm studio:delay`).
+
+## Languages
+
+Every bundled screen (`assets/i18n.js`), tray menu, application menu, clip toast and native notification (`src/messages.ts`, `src/locale.ts`) is translated into all **16 Trigglow languages** (`en`, `es`, `pt-BR`, `zh`, `fr`, `it`, `de`, `ru`, `uk`, `ko`, `ja`, `hi`, `ca`, `ca-valencia`, `eu`, `gl`) and stays synced with your Trigglow account language.
+
 ## Develop
 
 ```bash
 pnpm install            # set ELECTRON_SKIP_BINARY_DOWNLOAD=1 to skip the ~100 MB Electron binary
-pnpm studio:fetch       # Windows: the Trigglow Studio engine into vendor/ (pinned, checked by SHA-256)
+pnpm studio:fetch       # Windows: obs-studio-node + Dynamic Delay 0.7.2 core into vendor/ (pinned, SHA-256 checked)
+pnpm studio:delay       # optional (Windows): install a local build of the Dynamic Delay core into vendor/obs-studio-node
 TRIGGLOW_WEB_URL=https://trigglow.com/app TRIGGLOW_API_URL=https://api.trigglow.com pnpm dev
 pnpm test
 ```
 
-Env: `TRIGGLOW_WEB_URL` (default `http://localhost:5173/app` unpackaged, `https://trigglow.com/app` packaged; `https://dev.trigglow.com/app` for the dev environment), `TRIGGLOW_API_URL` (unpackaged: the web origin, through Vite's proxy; **packaged: `https://api.trigglow.com`** — in production the SPA is on Vercel and the API on its own host; for the dev environment set it to `https://dev.trigglow.com`) and `TRIGGLOW_UPDATE_URL` (update feed, default `<API>/api/desktop/update`). All must be trusted hosts (`src/trust.ts`); localhost only in unpackaged builds.
+Running with `--dev` (or placing an empty `dev` file next to the executable) switches to the develop stack (`https://dev.trigglow.com/app`, `https://apidev.trigglow.com`) using an isolated `<userData>-dev` directory. Signed-in Trigglow admins also see a **Server** menu in the app bar to switch between production and development (`server.json`).
+
+Env: `TRIGGLOW_WEB_URL` (default `http://localhost:5173/app` unpackaged, `https://trigglow.com/app` packaged; `https://dev.trigglow.com/app` for the dev environment), `TRIGGLOW_API_URL` (unpackaged: the web origin, through Vite's proxy; **packaged: `https://api.trigglow.com`** — in production the SPA is on Vercel and the API on its own host; for the dev environment set it to `https://apidev.trigglow.com`) and `TRIGGLOW_UPDATE_URL` (update feed, default `<API>/api/desktop/update`). All must be trusted hosts (`src/trust.ts`); localhost only in unpackaged builds.
 
 ## Build the installer
 
